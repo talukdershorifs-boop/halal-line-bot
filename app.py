@@ -29,7 +29,6 @@ handler = WebhookHandler(CHANNEL_SECRET)
 # API কনফিগারেশন
 genai.configure(api_key=GEMINI_API_KEY)
 
-# ব্যবহারকারীর পছন্দের ভাষা সংরক্ষণ
 user_languages = {}
 
 def get_language_selection_menu():
@@ -194,7 +193,7 @@ CHECKED_DATA = {
             "食用油脂 | دهون الطبخ\n"
             "マーガリン | سمن نباتي/مارجرين\n"
             "ショートニング | شورتنينج\n"
-            "ファットスプレッド | سمن دهনি\n"
+            "ファットスプレッド | سمن دهني\n"
             "コラーゲン | كولاجين\n"
             "乳化剤 | مستحلبات\n\n"
             "💡 ملاحظة: ترك الشبهات من سنن الإسلام، والأفضل تجنب ما اشتبه أصله حتى يتبين مصدره."
@@ -230,7 +229,7 @@ def callback():
 def handle_text_message(event):
     user_id = event.source.user_id
     text = event.message.text.strip()
-    current_lang = user_languages.get(user_id, "English")
+    current_lang = user_languages.get(user_id, "Bengali")
 
     with ApiClient(configuration) as api_client:
         line_bot_api = MessagingApi(api_client)
@@ -287,56 +286,52 @@ def handle_text_message(event):
 @handler.add(MessageEvent, message=ImageMessageContent)
 def handle_image_message(event):
     user_id = event.source.user_id
-    selected_lang = user_languages.get(user_id, "English")
-
-    with ApiClient(configuration) as api_client:
-        blob_api = MessagingApiBlob(api_client)
-        image_bytes = blob_api.get_message_content(event.message.id)
-
-    prompt = f"""
-    You are an expert Islamic Halal Food Inspector in Japan.
-    Inspect the provided food packaging image, focusing carefully on the Japanese ingredient list (原材料名).
-
-    LIST OF HARAM INGREDIENTS:
-    - Swine / Pork: 豚肉, ポーク, 豚脂, 豚脂肪, ラード, ハム, 豚エキス, 豚ゼラチン
-    - Non-Halal Meat/Fat: 牛肉, 牛脂, 動物性油脂, 混合油脂, コンソメ, 鶏肉, チキン
-    - Alcohol & Liquor: アルコール, 洋酒, 酒精, ラム, ワイン, ブランディ, ウィスキー, 酒, 料理酒, 清酒, 味醂, みりん
-    - Gelatin: ゼラチン (unless fish/plant origin is explicitly stated)
-
-    LIST OF SYUBHAH (DOUBTFUL) INGREDIENTS:
-    - 加工油脂, 食用油脂, マーガリン, ショートニング, ファットスプレッド, コラーゲン, 乳化剤
-
-    OUTPUT RULES:
-    1. Respond entirely in {selected_lang}.
-    2. Verdict headers (matching {selected_lang}):
-       - [✅ HALAL] - If completely free from Haram and Syubhah ingredients.
-       - [❌ HARAM] - If any forbidden ingredient is found.
-       - [⚠️ DOUBTFUL (SYUBHAH)] - If any Syubhah ingredient is found without origin specified.
-    3. Breakdown:
-       Mention the detected Kanji/Japanese word, its translation, and the reason.
-    4. Syubhah advice:
-       Mention that avoiding doubtful matters is Sunnah in Islam, and it is best avoided unless confirmed permissible.
-    """
+    selected_lang = user_languages.get(user_id, "Bengali")
 
     try:
-        # gemini-3.8-flash মডেল ব্যবহার
-        model = genai.GenerativeModel("models/gemini-3.8-flash")
+        with ApiClient(configuration) as api_client:
+            blob_api = MessagingApiBlob(api_client)
+            image_bytes = blob_api.get_message_content(event.message.id)
+
+        prompt = f"""
+        You are an expert Islamic Halal Food Inspector in Japan.
+        Carefully read the Japanese ingredient list (原材料名) in this image.
+
+        Forbidden Haram ingredients to flag:
+        - Pork / Swine: 豚肉, ポーク, 豚脂, 豚脂肪, ラード, ハム, 豚エキス
+        - Animal Meat/Fats: 牛肉, 牛脂, 動物性油脂, 混合油脂, コンソメ, 鶏肉, チキン
+        - Alcohol: アルコール, 洋酒, 酒精, ラム, ワイン, ブランディ, ウィスキー, 酒, 料理酒, 清酒, 味醂, みりん
+        - Gelatin: ゼラチン (unless specified as fish/plant)
+
+        Doubtful Syubhah ingredients to flag:
+        - 加工油脂, 食用油脂, マーガリン, ショートニング, ファットスプレッド, コラーゲン, 乳化剤
+
+        Respond clearly in {selected_lang}:
+        1. Final Verdict: [✅ হালাল / HALAL] or [❌ হারাম / HARAM] or [⚠️ সন্দেহজনক / SYUBHAH]
+        2. Found Ingredients & Explanation: Kanji, meaning, and why.
+        3. Clarification for Syubhah: Advise that avoiding doubtful matters is Sunnah.
+        """
+
+        # যেকোনো সমর্থিত সক্রিয় মডেল খুঁজে নেওয়া
+        target_model = None
+        for m in genai.list_models():
+            if 'generateContent' in m.supported_generation_methods:
+                if 'flash' in m.name:
+                    target_model = m.name
+                    break
+
+        if not target_model:
+            target_model = "gemini-1.5-flash"
+
+        model = genai.GenerativeModel(target_model)
         response = model.generate_content([
             prompt,
             {"mime_type": "image/jpeg", "data": image_bytes}
         ])
         result_text = response.text.strip()
+
     except Exception as e:
-        # ব্যাকআপ ফলব্যাক মডেল
-        try:
-            model = genai.GenerativeModel("gemini-1.5-pro")
-            response = model.generate_content([
-                prompt,
-                {"mime_type": "image/jpeg", "data": image_bytes}
-            ])
-            result_text = response.text.strip()
-        except Exception as e2:
-            result_text = f"Error analyzing image: {str(e2)}"
+        result_text = f"দুঃখিত, ছবিটি বিশ্লেষণ করতে সমস্যা হচ্ছে। ত্রুটি: {str(e)}"
 
     with ApiClient(configuration) as api_client:
         line_bot_api = MessagingApi(api_client)
