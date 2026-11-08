@@ -194,7 +194,7 @@ CHECKED_DATA = {
             "食用油脂 | دهون الطبخ\n"
             "マーガリン | سمن نباتي/مارجرين\n"
             "ショートニング | شورتنينج\n"
-            "ファットスプレッド | سمن دهني\n"
+            "ファットスプレッド | سمن دهনি\n"
             "コラーゲン | كولاجين\n"
             "乳化剤 | مستحلبات\n\n"
             "💡 ملاحظة: ترك الشبهات من سنن الإسلام، والأفضل تجنب ما اشتبه أصله حتى يتبين مصدره."
@@ -298,7 +298,7 @@ def handle_image_message(event):
     Inspect the provided food packaging image, focusing carefully on the Japanese ingredient list (原材料名).
 
     LIST OF HARAM INGREDIENTS:
-    - Pork/Swine: 豚肉, ポーク, 豚脂, 豚脂肪, ラード, ハム, 豚エキス, 豚ゼラチン
+    - Swine / Pork: 豚肉, ポーク, 豚脂, 豚脂肪, ラード, ハム, 豚エキス, 豚ゼラチン
     - Non-Halal Meat/Fat: 牛肉, 牛脂, 動物性油脂, 混合油脂, コンソメ, 鶏肉, チキン
     - Alcohol & Liquor: アルコール, 洋酒, 酒精, ラム, ワイン, ブランディ, ウィスキー, 酒, 料理酒, 清酒, 味醂, みりん
     - Gelatin: ゼラチン (unless fish/plant origin is explicitly stated)
@@ -308,7 +308,7 @@ def handle_image_message(event):
 
     OUTPUT RULES:
     1. Respond entirely in {selected_lang}.
-    2. Verdict headers (use the exact translation matching {selected_lang}):
+    2. Verdict headers (matching {selected_lang}):
        - [✅ HALAL] - If completely free from Haram and Syubhah ingredients.
        - [❌ HARAM] - If any forbidden ingredient is found.
        - [⚠️ DOUBTFUL (SYUBHAH)] - If any Syubhah ingredient is found without origin specified.
@@ -319,21 +319,24 @@ def handle_image_message(event):
     """
 
     try:
-        # উপলব্ধ মডেল স্বয়ংক্রিয়ভাবে শনাক্ত ও কল করা
-        available_model_name = "models/gemini-1.5-flash"
-        for m in genai.list_models():
-            if 'generateContent' in m.supported_generation_methods and 'flash' in m.name:
-                available_model_name = m.name
-                break
-
-        model = genai.GenerativeModel(available_model_name)
+        # gemini-3.8-flash মডেল ব্যবহার
+        model = genai.GenerativeModel("models/gemini-3.8-flash")
         response = model.generate_content([
             prompt,
             {"mime_type": "image/jpeg", "data": image_bytes}
         ])
         result_text = response.text.strip()
     except Exception as e:
-        result_text = f"Error analyzing image: {str(e)}"
+        # ব্যাকআপ ফলব্যাক মডেল
+        try:
+            model = genai.GenerativeModel("gemini-1.5-pro")
+            response = model.generate_content([
+                prompt,
+                {"mime_type": "image/jpeg", "data": image_bytes}
+            ])
+            result_text = response.text.strip()
+        except Exception as e2:
+            result_text = f"Error analyzing image: {str(e2)}"
 
     with ApiClient(configuration) as api_client:
         line_bot_api = MessagingApi(api_client)
