@@ -1,8 +1,9 @@
 import os
 import io
+import base64
+import requests
 from flask import Flask, request, abort
 from PIL import Image
-import google.generativeai as genai
 
 from linebot.v3 import WebhookHandler
 from linebot.v3.exceptions import InvalidSignatureError
@@ -27,9 +28,6 @@ GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 
 configuration = Configuration(access_token=CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(CHANNEL_SECRET)
-
-# মেমোরি ক্র্যাশ ঠেকাতে gRPC বাদ দিয়ে হালকা REST ট্রান্সপোর্ট ব্যবহার
-genai.configure(api_key=GEMINI_API_KEY, transport="rest")
 
 user_languages = {}
 
@@ -285,6 +283,42 @@ def handle_text_message(event):
                 )
             )
 
+def call_gemini_direct(prompt, image_b64):
+    """সরাসরি অফিশিয়াল REST এন্ডপয়েন্ট কল, যা কোনো লাইব্রেরির ওপর নির্ভরশীল নয়"""
+    candidate_models = ["gemini-2.5-flash", "gemini-3.8-flash", "gemini-2.0-flash"]
+    last_err = ""
+
+    for model_name in candidate_models:
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={GEMINI_API_KEY}"
+        payload = {
+            "contents": [{
+                "parts": [
+                    {"text": prompt},
+                    {
+                        "inline_data": {
+                            "mime_type": "image/jpeg",
+                            "data": image_b64
+                        }
+                    }
+                ]
+            }],
+            "generationConfig": {
+                "temperature": 0.2
+            }
+        }
+        headers = {"Content-Type": "application/json"}
+        try:
+            res = requests.post(url, json=payload, headers=headers, timeout=40)
+            if res.status_code == 200:
+                data = res.json()
+                return data["candidates"][0]["content"]["parts"][0]["text"].strip()
+            else:
+                last_err = f"{res.status_code}: {res.text}"
+        except Exception as e:
+            last_err = str(e)
+
+    raise Exception(last_err)
+
 @handler.add(MessageEvent, message=ImageMessageContent)
 def handle_image_message(event):
     user_id = event.source.user_id
@@ -295,41 +329,41 @@ def handle_image_message(event):
             blob_api = MessagingApiBlob(api_client)
             raw_bytes = blob_api.get_message_content(event.message.id)
 
-        # মেমোরি রক্ষা করতে ছবি অপ্টিমাইজ করা
+        # ছবির আকার হালকা করা (RAM ওভারফ্লো রোধ করতে)
         img = Image.open(io.BytesIO(raw_bytes))
-        img.thumbnail((1024, 1024))
+        img.thumbnail((1200, 1200))
         img_buffer = io.BytesIO()
-        img.convert('RGB').save(img_buffer, format="JPEG", quality=80)
-        optimized_bytes = img_buffer.getvalue()
+        img.convert('RGB').save(img_buffer, format="JPEG", quality=85)
+        image_b64 = base64.b64encode(img_buffer.getvalue()).decode("utf-8")
 
         prompt = f"""
         You are an expert Islamic Halal Food Inspector in Japan.
-        Inspect the Japanese food label (原材料名) in this image.
+        Inspect the Japanese food packaging image, focusing specifically on the ingredient list (原材料名).
 
-        Forbidden Haram ingredients to flag:
-        - Pork / Swine: 豚肉, ポーク, 豚脂, 豚脂肪, ラード, ハム, 豚エキス
-        - Animal Meat/Fats: 牛肉, 牛脂, 動物性油脂, 混合油脂, コンソメ, 鶏肉, チキン
-        - Alcohol: アルコール, 洋酒, 酒精, ラム, ワイン, ブランディ, ウィスキー, 酒, 料理酒, 清酒, 味醂, みりん
-        - Gelatin: ゼラチン (unless specified as fish/plant)
+        CRITICAL INGREDIENT RULES:
+        - Haram (Forbidden):
+          Pork/Swine (豚肉, ポーク, 豚脂, 豚脂肪, ラード, ハム, 豚エキス, 豚ゼラチン), 
+          Non-halal meats/fats (牛肉, 牛脂, 動物性油脂, 混合油脂, コンソメ, 鶏肉, チキン),
+          Alcohol (アルコール, 洋酒, 酒精, ラム, ワイン, ブランディ, ウィスキー, 酒, 料理酒, 清酒, 味醂, みりん),
+          Gelatin (ゼラチン - unless specified as fish or plant).
 
-        Doubtful Syubhah ingredients to flag:
-        - 加工油脂, 食用油脂, マーガリン, ショートニング, ファットスプレッド, コラーゲン, 乳化剤
+        - Syubhah (Doubtful):
+          加工油脂, 食用油脂, マーガリン, ショートニング, ファットスプレッド, コラーゲン, 乳化剤 (unless marked as plant/soy).
 
-        Respond clearly in {selected_lang}:
-        1. Final Verdict: [✅ হালাল / HALAL] or [❌ হারাম / HARAM] or [⚠️ সন্দেহজনক / SYUBHAH]
-        2. Found Ingredients & Explanation: Kanji, meaning, and why.
-        3. Clarification for Syubhah: Mention that avoiding doubtful matters is Sunnah.
+        OUTPUT INSTRUCTIONS:
+        1. Write the entire analysis in {selected_lang}.
+        2. Give a clear verdict header:
+           - [✅ হালাল / HALAL]
+           - [❌ হারাম / HARAM]
+           - [⚠️ সন্দেহজনক / SYUBHAH]
+        3. Explain each detected ingredient: Kanji, translation, and ruling.
+        4. If Syubhah, explain that avoiding doubtful matters is Sunnah.
         """
 
-        model = genai.GenerativeModel("gemini-1.5-flash")
-        response = model.generate_content([
-            prompt,
-            {"mime_type": "image/jpeg", "data": optimized_bytes}
-        ])
-        result_text = response.text.strip()
+        result_text = call_gemini_direct(prompt, image_b64)
 
     except Exception as e:
-        result_text = f"দুঃখিত, ছবিটি বিশ্লেষণ করতে সমস্যা হচ্ছে। ত্রুটি: {str(e)}"
+        result_text = f"দুঃখিত, ছবিটি বিশ্লেষণ করতে সমস্যা হয়েছে। বিস্তারিত: {str(e)}"
 
     with ApiClient(configuration) as api_client:
         line_bot_api = MessagingApi(api_client)
