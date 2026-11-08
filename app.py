@@ -32,6 +32,7 @@ GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 configuration = Configuration(access_token=CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(CHANNEL_SECRET)
 
+# ভাষা ট্র্যাকিং ডিকশনারি
 user_languages = {}
 
 def get_image_source_quick_reply():
@@ -42,11 +43,11 @@ def get_image_source_quick_reply():
 
 def get_language_selection_menu():
     return QuickReply(items=[
-        QuickReplyItem(action=MessageAction(label="🇧🇩 বাংলা", text="Set: বাংলা")),
-        QuickReplyItem(action=MessageAction(label="🇮🇩 Bahasa Indonesia", text="Set: Bahasa Indonesia")),
+        QuickReplyItem(action=MessageAction(label="🇧🇩 বাংলা", text="Set: Bengali")),
+        QuickReplyItem(action=MessageAction(label="🇮🇩 Bahasa Indonesia", text="Set: Indonesian")),
         QuickReplyItem(action=MessageAction(label="🇬🇧 English", text="Set: English")),
-        QuickReplyItem(action=MessageAction(label="🇯🇵 日本語", text="Set: 日本語")),
-        QuickReplyItem(action=MessageAction(label="🇸🇦 العربية", text="Set: العربية")),
+        QuickReplyItem(action=MessageAction(label="🇯🇵 日本語", text="Set: Japanese")),
+        QuickReplyItem(action=MessageAction(label="🇸🇦 العربية", text="Set: Arabic")),
     ])
 
 CHECKED_DATA = {
@@ -79,7 +80,7 @@ CHECKED_DATA = {
 
         "tips": """🛒 জাপানে হালাল কেনাকাটার টিপস:
 
-১. পাউরুটি/ব্রেড কেনার সময় প্যাকেটে '植物性' বা '植物油脂' লেখা আছে কি না লক্ষ্য করুন।
+১. পাউরুটি কেনার সময় প্যাকেটে '植物性' বা '植物油脂' লেখা আছে কি না লক্ষ্য করুন।
 ২. সাধারণ সুপারমার্কেট থেকে মাংস বা সসেজ কেনা পরিহার করুন, হালাল গ্রোসারি থেকে সংগ্রহ করুন।
 ৩. মিষ্টি ও কেক-পেস্ট্রিতে প্রায়শই '洋酒' (মদ) থাকে, তাই উপাদান দেখে নিন।
 ৪. সিফুড বা স্ন্যাক্সে অনেক সময় ফ্লেভার হিসেবে 'みりん' বা '料理酒' ব্যবহার করা হয়।""",
@@ -95,12 +96,12 @@ CHECKED_DATA = {
     },
 
     "Indonesian": {
-        "haram": """🚫 Bahan yang Pasti Haram:
+        "haram": """🚫 Bahan yang Pasti Haram (Strictly Haram):
 
 • 豚肉、ポーク | Daging Babi (Pork)
 • 豚脂肪、豚脂 | Lemak Babi (Pork Fat)
 • ラード、ハム、ベーコン | Lard, Ham, Bacon
-• 豚エキス | Ekstrak Babi
+• 豚エキス | Ekstrak Daging Babi
 • 豚ゼラチン | Gelatin Babi
 • 牛肉、牛脂 | Daging/Lemak Sapi Non-Halal
 • 鶏肉、チキン | Daging Ayam Non-Halal
@@ -108,34 +109,37 @@ CHECKED_DATA = {
 • コンソメ | Kaldu Sup Consomme
 • アルコール、洋酒 | Alkohol, Minuman Keras
 • 酒、清酒、料理酒 | Sake, Cooking Rice Wine
-• 味醂、みりん | Mirin
-• 酒精 | Alkohol Etil
+• 味醂、みりん | Mirin (Sake Manis Masak)
+• 酒精 | Alkohol Etil (Pengawet)
 • ラム、ワイン、ブランディ | Rum, Wine, Brandy""",
 
         "syubhah": """⚠️ Bahan yang Diragukan (Syubhah):
 
-• 乳化剤 (Emulsifier) - Syubhah kecuali nabati (植物性).
-• ショートニング (Shortening) - Sering mengandung lemak hewani.
+• 乳化剤 (Emulsifier) - Syubhah kecuali ada keterangan nabati (植物性).
+• ショートニング (Shortening) - Sering kali mengandung lemak hewani.
 • マーガリン (Margarine) - Mungkin mengandung lemak hewani.
 • ファットスプレッド (Fatspread) - Campuran lemak olahan.
-• 加工油脂 (Processed Fat) - Sumber lemak tidak spesifik.
-• コラーゲン / ゼラチン - Hindari kecuali dari ikan (魚由来).""",
+• 加工油脂 (Processed Fat) - Sumber lemak tidak jelas.
+• コラーゲン / ゼラチン - Hindari kecuali bertuliskan dari ikan (魚由来).
 
-        "tips": """🛒 Tips Berbelanja Halal di Jepang:
+💡 Catatan: Menghindari syubhah adalah bagian dari menjaga kehalalan konsumsi.""",
 
-1. Saat membeli roti, pastikan ada tulisan 植物性 (nabati) atau 植物油脂.
-2. Hindari membeli daging mentah dari supermarket biasa kecuali bersertifikasi halal.
-3. Kue dan permen sering mengandung 洋酒 (alkohol barat) untuk aroma.
-4. Camilan ikan atau crackers sering menggunakan みりん atau sake.""",
+        "tips": """🛒 Tips Belanja Makanan Halal di Jepang:
+
+1. Saat membeli roti, pastikan ada tulisan 植物性 (nabati) atau 植物油脂 (minyak nabati).
+2. Hindari membeli daging segar atau sosis di supermarket biasa tanpa logo Halal.
+3. Kue, pudding, dan cokelat Jepang sangat sering diberi 洋酒 (minuman keras) sebagai aroma.
+4. Banyak snack kerupuk beras (Senbei) yang dibumbui dengan みりん (mirin) atau sake.""",
 
         "info": """ℹ️ Tentang Halal Check Japan:
 
-Bot ini menganalisis label bahan makanan Jepang (原材料名) untuk mendeteksi kandungan haram atau syubhah.
+Bot ini memeriksa daftar komposisi makanan Jepang (原材料名) untuk mendeteksi bahan haram dan syubhah.
 
-📷 Panduan Foto:
-• Foto daftar bahan (原材料名), BUKAN barcode.""",
+📷 Cara Mengambil Foto:
+• Foto bagian komposisi (原材料名), BUKAN barcode kemasan.
+• Pastikan tulisan kanji terlihat jelas dan terang.""",
 
-        "lang_confirm": "Bahasa telah diatur ke Bahasa Indonesia! Silakan gunakan menu atau kirim foto."
+        "lang_confirm": "Bahasa telah diatur ke Bahasa Indonesia! Silakan gunakan menu di bawah atau kirim foto komposisi makanan."
     },
 
     "English": {
@@ -282,6 +286,7 @@ def callback():
 
 @handler.add(MessageEvent, message=TextMessageContent)
 def handle_text_message(event):
+    global user_languages
     user_id = event.source.user_id
     raw_text = event.message.text.strip()
     text = raw_text.lower()
@@ -290,18 +295,41 @@ def handle_text_message(event):
     with ApiClient(configuration) as api_client:
         line_bot_api = MessagingApi(api_client)
 
-        if any(k in text for k in ["scan", "take a picture", "ছবি", "potret", "kamera"]):
+        # ১. ভাষা পরিবর্তনের সেট কমান্ড
+        if raw_text.startswith("Set:"):
+            target = raw_text.replace("Set:", "").strip().lower()
+            if "indonesian" in target or "indonesia" in target:
+                user_languages[user_id] = "Indonesian"
+            elif "english" in target:
+                user_languages[user_id] = "English"
+            elif "japanese" in target or "日本語" in target:
+                user_languages[user_id] = "Japanese"
+            elif "arabic" in target or "العربية" in target:
+                user_languages[user_id] = "Arabic"
+            else:
+                user_languages[user_id] = "Bengali"
+
+            new_lang = user_languages[user_id]
+            reply = CHECKED_DATA[new_lang]["lang_confirm"]
+            line_bot_api.reply_message(
+                ReplyMessageRequest(reply_token=event.reply_token, messages=[TextMessage(text=reply)])
+            )
+            return
+
+        # ২. ক্যামেরা ও গ্যালারি পপ-আপ রিকোয়েস্ট
+        if any(k in text for k in ["scan", "take a picture", "ছবি", "potret", "kamera", "foto"]):
             line_bot_api.reply_message(
                 ReplyMessageRequest(
                     reply_token=event.reply_token,
                     messages=[
                         TextMessage(
-                            text="নিচের কোনটি দিয়ে পণ্যের উপাদানের (原材料名) ছবি দিতে চান তা বেছে নিন:",
+                            text="Pilih cara kirim foto / ছবির উৎস বেছে নিন:",
                             quick_reply=get_image_source_quick_reply()
                         )
                     ]
                 )
             )
+        # ৩. অন্যান্য বাটন
         elif any(k in text for k in ["haram", "হারাম"]):
             reply = CHECKED_DATA[current_lang]["haram"]
             line_bot_api.reply_message(
@@ -328,29 +356,11 @@ def handle_text_message(event):
                     reply_token=event.reply_token,
                     messages=[
                         TextMessage(
-                            text="Select Language / ভাষা বেছে নিন / Pilih Bahasa:",
+                            text="Select Language / Pilih Bahasa / ভাষা বেছে নিন:",
                             quick_reply=get_language_selection_menu()
                         )
                     ]
                 )
-            )
-        elif raw_text.startswith("Set: "):
-            chosen = raw_text.replace("Set: ", "").strip()
-            if "বাংলা" in chosen:
-                user_languages[user_id] = "Bengali"
-            elif "indonesia" in chosen.lower():
-                user_languages[user_id] = "Indonesian"
-            elif "日本語" in chosen:
-                user_languages[user_id] = "Japanese"
-            elif "العربية" in chosen:
-                user_languages[user_id] = "Arabic"
-            else:
-                user_languages[user_id] = "English"
-
-            new_lang = user_languages[user_id]
-            reply = CHECKED_DATA[new_lang]["lang_confirm"]
-            line_bot_api.reply_message(
-                ReplyMessageRequest(reply_token=event.reply_token, messages=[TextMessage(text=reply)])
             )
         else:
             line_bot_api.reply_message(
@@ -358,7 +368,7 @@ def handle_text_message(event):
                     reply_token=event.reply_token,
                     messages=[
                         TextMessage(
-                            text="নিচের মেনু থেকে অপশন বেছে নিন অথবা পণ্যের উপাদানের (原材料名) ছবি পাঠান।",
+                            text="Silakan gunakan menu di bawah atau kirim foto bahan makanan (原材料名).\nনিচের মেনু ব্যবহার করুন বা উপাদানের ছবি পাঠান।",
                             quick_reply=get_language_selection_menu()
                         )
                     ]
@@ -366,7 +376,8 @@ def handle_text_message(event):
             )
 
 def call_gemini_vision(prompt, image_b64):
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key={GEMINI_API_KEY}"
+    """সর্বাধিক দ্রুত ও কার্যকর ফ্ল্যাশ এন্ডপয়েন্ট ব্যবহার"""
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={GEMINI_API_KEY}"
     payload = {
         "contents": [{
             "parts": [
@@ -375,12 +386,12 @@ def call_gemini_vision(prompt, image_b64):
             ]
         }],
         "generationConfig": {
-            "temperature": 0.2,
-            "maxOutputTokens": 800
+            "temperature": 0.1,
+            "maxOutputTokens": 600
         }
     }
-    # টাইমআউট ৯০ সেকেন্ডে উন্নীত করা হলো যাতে নেটওয়ার্ক বা জেনারেশন লেটেন্সিতে ড্রপ না করে
-    res = requests.post(url, json=payload, headers={"Content-Type": "application/json"}, timeout=90)
+    # টাইমআউট ৩৫ সেকেন্ড রাখা হলো
+    res = requests.post(url, json=payload, headers={"Content-Type": "application/json"}, timeout=35)
     if res.status_code == 200:
         data = res.json()
         return data["candidates"][0]["content"]["parts"][0]["text"].strip()
@@ -389,6 +400,7 @@ def call_gemini_vision(prompt, image_b64):
 
 @handler.add(MessageEvent, message=ImageMessageContent)
 def handle_image_message(event):
+    global user_languages
     user_id = event.source.user_id
     selected_lang = user_languages.get(user_id, "Bengali")
 
@@ -397,34 +409,38 @@ def handle_image_message(event):
             blob_api = MessagingApiBlob(api_client)
             raw_bytes = blob_api.get_message_content(event.message.id)
 
-        # ইমেজ অপ্টিমাইজেশন: দ্রুত আপলোড ও ফাস্ট প্রসেসিং নিশ্চিত করতে ৭৫০px স্কেলিং
+        # আল্ট্রা-লাইট ইমেজ কম্প্রেশন (কাঞ্জি অক্ষুণ্ণ রেখে সাইজ ৩০-৪০ KB তে রূপান্তর)
         img = Image.open(io.BytesIO(raw_bytes))
-        img.thumbnail((750, 750))
+        img.thumbnail((600, 600))
         out_buf = io.BytesIO()
-        img.convert('RGB').save(out_buf, format="JPEG", quality=70, optimize=True)
+        img.convert('RGB').save(out_buf, format="JPEG", quality=65, optimize=True)
         image_b64 = base64.b64encode(out_buf.getvalue()).decode("utf-8")
 
         del raw_bytes, img, out_buf
         gc.collect()
 
         prompt = f"""
-        Inspect the Japanese food packaging ingredient label (原材料名) shown in the image as a Halal Inspector.
+        Act as an expert Halal Food Inspector in Japan.
+        Inspect the ingredient list (原材料名) in the image.
 
         RULES:
         - Haram: 豚肉, ポーク, 豚脂, 豚脂肪, ラード, ハム, ベーコン, 豚エキス, 豚ゼラチン, 牛肉, 牛脂, 動物性油脂, 混合油脂, コンソメ, 鶏肉, チキン, アルコール, 洋酒, 酒精, ラム, ワイン, ブランディ, ウィスキー, 酒, 料理酒, 清酒, 味醂, みりん, ゼラチン (unless fish/plant).
         - Syubhah: 加工油脂, 食用油脂, マーガリン, ショートニング, ファットスプレッド, コラーゲン, 乳化剤.
 
-        OUTPUT REQUIREMENTS:
-        1. Language: {selected_lang}.
-        2. Verdict header: [✅ হালাল / HALAL] or [❌ হারাম / HARAM] or [⚠️ সন্দেহজনক / SYUBHAH].
-        3. Clear, concise breakdown of detected items with Kanji and translation.
-        4. If Syubhah: note that leaving doubtful matters is Sunnah.
+        OUTPUT INSTRUCTIONS:
+        1. Language: Strictly write the full response in {selected_lang}.
+        2. Verdict header:
+           - If Indonesian: [✅ HALAL] / [❌ HARAM] / [⚠️ SYUBHAH]
+           - If Bengali: [✅ হালাল / HALAL] / [❌ হারাম / HARAM] / [⚠️ সন্দেহজনক / SYUBHAH]
+           - Otherwise appropriate language header.
+        3. List detected ingredients (Kanji + Meaning + Ruling).
+        4. Keep it brief and accurate.
         """
 
         result_text = call_gemini_vision(prompt, image_b64)
 
     except Exception as e:
-        result_text = f"দুঃখিত, ছবিটি বিশ্লেষণ করতে সমস্যা হয়েছে। বিস্তারিত: {str(e)}"
+        result_text = f"Maaf / দুঃখিত, সমস্যা হয়েছে: {str(e)}"
 
     with ApiClient(configuration) as api_client:
         line_bot_api = MessagingApi(api_client)
