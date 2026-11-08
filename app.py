@@ -285,7 +285,8 @@ def handle_text_message(event):
             )
 
 def call_gemini_direct(prompt, image_b64):
-    models = ["gemini-2.5-flash", "gemini-3.8-flash", "gemini-2.0-flash"]
+    # গুগল সরাসরি যে মডেলটি সাজেস্ট করেছে সেটি প্রাধান্য দেওয়া হয়েছে
+    models = ["gemini-3.8-flash"]
     last_err = ""
 
     for model_name in models:
@@ -307,7 +308,7 @@ def call_gemini_direct(prompt, image_b64):
             }
         }
         try:
-            res = requests.post(url, json=payload, headers={"Content-Type": "application/json"}, timeout=35)
+            res = requests.post(url, json=payload, headers={"Content-Type": "application/json"}, timeout=45)
             if res.status_code == 200:
                 data = res.json()
                 return data["candidates"][0]["content"]["parts"][0]["text"].strip()
@@ -328,7 +329,7 @@ def handle_image_message(event):
             blob_api = MessagingApiBlob(api_client)
             raw_bytes = blob_api.get_message_content(event.message.id)
 
-        # মেমরি অপ্টিমাইজড ডাউনস্যাম্পলিং
+        # মেমরি বাঁচানোর জন্য ছবি রিসাইজ করা
         img_file = io.BytesIO(raw_bytes)
         img = Image.open(img_file)
         img.draft('RGB', (1000, 1000))
