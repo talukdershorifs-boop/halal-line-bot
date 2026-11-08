@@ -2,6 +2,7 @@ import os
 import io
 import gc
 import json
+import time
 import base64
 import requests
 from flask import Flask, request, abort
@@ -347,7 +348,15 @@ def handle_text_message(event):
             )
 
 def call_gemini_vision(prompt, image_b64):
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key={GEMINI_API_KEY}"
+    """
+    ৫০৩ হাই ডিমান্ড এড়াতে একের অধিক সক্রিয় মডেল দিয়ে তাৎক্ষণিক ফলব্যাক
+    """
+    candidate_models = [
+        "models/gemini-3.8-flash",
+        "models/gemini-flash-latest",
+        "models/gemini-2.0-flash-lite"
+    ]
+
     payload = {
         "contents": [{
             "parts": [
@@ -357,17 +366,31 @@ def call_gemini_vision(prompt, image_b64):
         }],
         "generationConfig": {
             "temperature": 0.1,
-            "maxOutputTokens": 350
+            "maxOutputTokens": 300
         }
     }
-    
-    # অতি দ্রুত প্রসেসিং (টাইমআউট ৪৫ সেকেন্ড)
-    res = requests.post(url, json=payload, headers={"Content-Type": "application/json"}, timeout=45)
-    if res.status_code == 200:
-        data = res.json()
-        return data["candidates"][0]["content"]["parts"][0]["text"].strip()
-    else:
-        raise Exception(f"Google API Error ({res.status_code}): {res.text}")
+
+    last_error = ""
+    # মডেলগুলোর মধ্যে ক্রমান্বয়ে চেষ্টা করবে
+    for model_name in candidate_models:
+        url = f"https://generativelanguage.googleapis.com/v1beta/{model_name}:generateContent?key={GEMINI_API_KEY}"
+        for attempt in range(2):
+            try:
+                res = requests.post(url, json=payload, headers={"Content-Type": "application/json"}, timeout=30)
+                if res.status_code == 200:
+                    data = res.json()
+                    return data["candidates"][0]["content"]["parts"][0]["text"].strip()
+                elif res.status_code == 503:
+                    time.sleep(1)
+                    continue
+                else:
+                    last_error = f"Google API Error ({res.status_code}): {res.text}"
+                    break
+            except Exception as e:
+                last_error = str(e)
+                break
+
+    raise Exception(last_error)
 
 @handler.add(MessageEvent, message=ImageMessageContent)
 def handle_image_message(event):
@@ -380,11 +403,11 @@ def handle_image_message(event):
             blob_api = MessagingApiBlob(api_client)
             raw_bytes = blob_api.get_message_content(event.message.id)
 
-        # আল্ট্রা-লাইট ৪৫০px ইমেজ (নিমিষেই আপলোড ও এআই প্রসেস নিশ্চিত করবে)
+        # ছবির সাইজ ৪০০×৪০০ পিক্সেল এবং কোয়ালিটি ৫০% (সাইজ মাত্র ২০ KB)
         img = Image.open(io.BytesIO(raw_bytes))
-        img.thumbnail((450, 450))
+        img.thumbnail((400, 400))
         out_buf = io.BytesIO()
-        img.convert('RGB').save(out_buf, format="JPEG", quality=55, optimize=True)
+        img.convert('RGB').save(out_buf, format="JPEG", quality=50, optimize=True)
         image_b64 = base64.b64encode(out_buf.getvalue()).decode("utf-8")
 
         del raw_bytes, img, out_buf
