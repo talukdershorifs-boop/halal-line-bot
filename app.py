@@ -212,8 +212,8 @@ Analyzes Japanese ingredient labels (原材料名) to identify haram or syubhah 
         "tips": """🛒 日本でのハラールショッピングのヒント:
 
 1. パンを購入する際は「植物油脂」や「植物性」の表示を確認してください。
-2. デザートや洋菓子には風味付けで「洋酒」や「酒精」が多用されます।
-3. お惣菜や練り製品には「みりん」や肉エキスが含まれることが一般的です।""",
+2. デザートや洋菓子には風味付けで「洋酒」や「酒精」が多用されます。
+3. お惣菜や練り製品には「みりん」や肉エキスが含まれることが一般的です。""",
 
         "info": """ℹ️ Halal Check Japan について:
 
@@ -374,9 +374,13 @@ def call_gemini_vision(prompt, image_b64):
                 {"inline_data": {"mime_type": "image/jpeg", "data": image_b64}}
             ]
         }],
-        "generationConfig": {"temperature": 0.2}
+        "generationConfig": {
+            "temperature": 0.2,
+            "maxOutputTokens": 800
+        }
     }
-    res = requests.post(url, json=payload, headers={"Content-Type": "application/json"}, timeout=45)
+    # টাইমআউট ৯০ সেকেন্ডে উন্নীত করা হলো যাতে নেটওয়ার্ক বা জেনারেশন লেটেন্সিতে ড্রপ না করে
+    res = requests.post(url, json=payload, headers={"Content-Type": "application/json"}, timeout=90)
     if res.status_code == 200:
         data = res.json()
         return data["candidates"][0]["content"]["parts"][0]["text"].strip()
@@ -393,34 +397,28 @@ def handle_image_message(event):
             blob_api = MessagingApiBlob(api_client)
             raw_bytes = blob_api.get_message_content(event.message.id)
 
+        # ইমেজ অপ্টিমাইজেশন: দ্রুত আপলোড ও ফাস্ট প্রসেসিং নিশ্চিত করতে ৭৫০px স্কেলিং
         img = Image.open(io.BytesIO(raw_bytes))
-        img.thumbnail((900, 900))
+        img.thumbnail((750, 750))
         out_buf = io.BytesIO()
-        img.convert('RGB').save(out_buf, format="JPEG", quality=75, optimize=True)
+        img.convert('RGB').save(out_buf, format="JPEG", quality=70, optimize=True)
         image_b64 = base64.b64encode(out_buf.getvalue()).decode("utf-8")
 
         del raw_bytes, img, out_buf
         gc.collect()
 
         prompt = f"""
-        You are an expert Islamic Halal Food Inspector in Japan.
-        Inspect the Japanese food packaging image, focusing specifically on the ingredient list (原材料名).
+        Inspect the Japanese food packaging ingredient label (原材料名) shown in the image as a Halal Inspector.
 
-        CRITICAL INGREDIENT RULES:
-        - Haram:
-          Pork/Swine (豚肉, ポーク, 豚脂, 豚脂肪, ラード, ハム, ベーコン, 豚エキス, 豚ゼラチン), 
-          Non-halal meats/fats (牛肉, 牛脂, 動物性油脂, 混合油脂, コンソメ, 鶏肉, チキン),
-          Alcohol (アルコール, 洋酒, 酒精, ラム, ワイン, ブランディ, ウィスキー, 酒, 料理酒, 清酒, 味醂, みりん),
-          Gelatin (ゼラチン - unless specified as fish or plant).
+        RULES:
+        - Haram: 豚肉, ポーク, 豚脂, 豚脂肪, ラード, ハム, ベーコン, 豚エキス, 豚ゼラチン, 牛肉, 牛脂, 動物性油脂, 混合油脂, コンソメ, 鶏肉, チキン, アルコール, 洋酒, 酒精, ラム, ワイン, ブランディ, ウィスキー, 酒, 料理酒, 清酒, 味醂, みりん, ゼラチン (unless fish/plant).
+        - Syubhah: 加工油脂, 食用油脂, マーガリン, ショートニング, ファットスプレッド, コラーゲン, 乳化剤.
 
-        - Syubhah:
-          加工油脂, 食用油脂, マーガリン, ショートニング, ファットスプレッド, コラーゲン, 乳化剤.
-
-        OUTPUT INSTRUCTIONS:
-        1. Write the evaluation in {selected_lang}.
+        OUTPUT REQUIREMENTS:
+        1. Language: {selected_lang}.
         2. Verdict header: [✅ হালাল / HALAL] or [❌ হারাম / HARAM] or [⚠️ সন্দেহজনক / SYUBHAH].
-        3. Explain each detected ingredient: Kanji, translation, and ruling.
-        4. If Syubhah, explain that avoiding doubtful matters is Sunnah.
+        3. Clear, concise breakdown of detected items with Kanji and translation.
+        4. If Syubhah: note that leaving doubtful matters is Sunnah.
         """
 
         result_text = call_gemini_vision(prompt, image_b64)
