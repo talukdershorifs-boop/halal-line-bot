@@ -19,7 +19,8 @@ from linebot.v3.messaging import (
     TextMessage,
     QuickReply,
     QuickReplyItem,
-    MessageAction
+    MessageAction,
+    CameraAction
 )
 from linebot.v3.webhooks import MessageEvent, TextMessageContent, ImageMessageContent
 
@@ -33,6 +34,12 @@ configuration = Configuration(access_token=CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(CHANNEL_SECRET)
 
 user_languages = {}
+
+def get_direct_camera_quick_reply():
+    """সরাসরি ব্যাক ক্যামেরা ওপেন করার অফিশিয়াল LINE অ্যাকশন"""
+    return QuickReply(items=[
+        QuickReplyItem(action=CameraAction(label="📷 ক্যামেরা খুলুন (Open Camera)"))
+    ])
 
 def get_language_selection_menu():
     return QuickReply(items=[
@@ -282,6 +289,7 @@ def handle_text_message(event):
     with ApiClient(configuration) as api_client:
         line_bot_api = MessagingApi(api_client)
 
+        # ভাষা পরিবর্তন
         if raw_text.startswith("Set:"):
             target = raw_text.replace("Set:", "").strip().lower()
             if "indonesian" in target or "indonesia" in target:
@@ -302,7 +310,20 @@ def handle_text_message(event):
             )
             return
 
-        if any(k in text for k in ["haram", "হারাম"]):
+        # সরাসরি ব্যাক ক্যামেরা ট্রিগার হ্যান্ডলার
+        if any(k in text for k in ["scan", "ছবি তুলুন", "camera", "ছবি", "take a picture"]):
+            line_bot_api.reply_message(
+                ReplyMessageRequest(
+                    reply_token=event.reply_token,
+                    messages=[
+                        TextMessage(
+                            text="নিচের বাটনে চাপ দিয়ে পণ্যের উপাদানের স্পষ্ট ছবি তুলুন:",
+                            quick_reply=get_direct_camera_quick_reply()
+                        )
+                    ]
+                )
+            )
+        elif any(k in text for k in ["haram", "হারাম"]):
             reply = CHECKED_DATA[current_lang]["haram"]
             line_bot_api.reply_message(
                 ReplyMessageRequest(reply_token=event.reply_token, messages=[TextMessage(text=reply)])
