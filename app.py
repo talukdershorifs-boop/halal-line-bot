@@ -25,6 +25,8 @@ GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 
 configuration = Configuration(access_token=CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(CHANNEL_SECRET)
+
+# API কনফিগারেশন
 genai.configure(api_key=GEMINI_API_KEY)
 
 # ব্যবহারকারীর পছন্দের ভাষা সংরক্ষণ
@@ -317,8 +319,14 @@ def handle_image_message(event):
     """
 
     try:
-        # gemini-1.5-flash-latest দিয়ে মডেল কল করা হচ্ছে
-        model = genai.GenerativeModel("gemini-1.5-flash-latest")
+        # উপলব্ধ মডেল স্বয়ংক্রিয়ভাবে শনাক্ত ও কল করা
+        available_model_name = "models/gemini-1.5-flash"
+        for m in genai.list_models():
+            if 'generateContent' in m.supported_generation_methods and 'flash' in m.name:
+                available_model_name = m.name
+                break
+
+        model = genai.GenerativeModel(available_model_name)
         response = model.generate_content([
             prompt,
             {"mime_type": "image/jpeg", "data": image_bytes}
