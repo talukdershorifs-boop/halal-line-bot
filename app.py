@@ -26,7 +26,7 @@ GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 configuration = Configuration(access_token=CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(CHANNEL_SECRET)
 
-# API কনফিগারেশন
+# Gemini API সেটআপ
 genai.configure(api_key=GEMINI_API_KEY)
 
 user_languages = {}
@@ -295,7 +295,7 @@ def handle_image_message(event):
 
         prompt = f"""
         You are an expert Islamic Halal Food Inspector in Japan.
-        Carefully read the Japanese ingredient list (原材料名) in this image.
+        Inspect the Japanese food label (原材料名) in this image.
 
         Forbidden Haram ingredients to flag:
         - Pork / Swine: 豚肉, ポーク, 豚脂, 豚脂肪, ラード, ハム, 豚エキス
@@ -309,21 +309,11 @@ def handle_image_message(event):
         Respond clearly in {selected_lang}:
         1. Final Verdict: [✅ হালাল / HALAL] or [❌ হারাম / HARAM] or [⚠️ সন্দেহজনক / SYUBHAH]
         2. Found Ingredients & Explanation: Kanji, meaning, and why.
-        3. Clarification for Syubhah: Advise that avoiding doubtful matters is Sunnah.
+        3. Clarification for Syubhah: Mention that avoiding doubtful matters is Sunnah.
         """
 
-        # যেকোনো সমর্থিত সক্রিয় মডেল খুঁজে নেওয়া
-        target_model = None
-        for m in genai.list_models():
-            if 'generateContent' in m.supported_generation_methods:
-                if 'flash' in m.name:
-                    target_model = m.name
-                    break
-
-        if not target_model:
-            target_model = "gemini-1.5-flash"
-
-        model = genai.GenerativeModel(target_model)
+        # গুগল এপিআই-এর প্রস্তাবিত gemini-3.8-flash সরাসরি নির্ধারণ করা হলো
+        model = genai.GenerativeModel("gemini-3.8-flash")
         response = model.generate_content([
             prompt,
             {"mime_type": "image/jpeg", "data": image_bytes}
