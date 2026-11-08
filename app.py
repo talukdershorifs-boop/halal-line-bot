@@ -1,6 +1,7 @@
 import os
 import io
 import gc
+import json
 import base64
 import requests
 from flask import Flask, request, abort
@@ -372,7 +373,11 @@ def handle_text_message(event):
             )
 
 def call_gemini_vision(prompt, image_b64):
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key={GEMINI_API_KEY}"
+    """
+    streamGenerateContent ব্যবহার করে ইনস্ট্যান্ট রেসপন্স তৈরি
+    যাতে কোনোভাবেই Read Timeout না ঘটে।
+    """
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:streamGenerateContent?key={GEMINI_API_KEY}"
     payload = {
         "contents": [{
             "parts": [
@@ -382,15 +387,51 @@ def call_gemini_vision(prompt, image_b64):
         }],
         "generationConfig": {
             "temperature": 0.1,
-            "maxOutputTokens": 600
+            "maxOutputTokens": 500
         }
     }
-    res = requests.post(url, json=payload, headers={"Content-Type": "application/json"}, timeout=60)
-    if res.status_code == 200:
-        data = res.json()
-        return data["candidates"][0]["content"]["parts"][0]["text"].strip()
-    else:
+    
+    # stream=True এর কারণে গুগল প্রথম চাংক তৈরি করামাত্রই কানেকশন সচল হয়ে যায়
+    res = requests.post(url, json=payload, headers={"Content-Type": "application/json"}, timeout=120, stream=True)
+    
+    if res.status_code != 200:
         raise Exception(f"Google API Error ({res.status_code}): {res.text}")
+
+    full_text = []
+    # স্ট্রিমিং ডেটা রিসিভ ও জোড়া লাগানো
+    for line in res.iter_lines(decode_unicode=True):
+        if not line:
+            continue
+        cleaned = line.strip()
+        if cleaned.startswith("data: "):
+            cleaned = cleaned[6:].strip()
+        if cleaned.startswith("[") or cleaned.startswith("]"):
+            cleaned = cleaned.strip("[],")
+        if not cleaned:
+            continue
+        try:
+            chunk = json.loads(cleaned)
+            candidates = chunk.get("candidates", [])
+            if candidates:
+                parts = candidates[0].get("content", {}).get("parts", [])
+                for p in parts:
+                    if "text" in p:
+                        full_text.append(p["text"])
+        except Exception:
+            continue
+
+    result = "".join(full_text).strip()
+    if not result:
+        # ফলব্যাক সরাসরি টেক্সট পার্স
+        try:
+            direct_json = res.json()
+            if isinstance(direct_json, list):
+                direct_json = direct_json[0]
+            result = direct_json["candidates"][0]["content"]["parts"][0]["text"].strip()
+        except Exception:
+            raise Exception("No text response received from AI model.")
+
+    return result
 
 @handler.add(MessageEvent, message=ImageMessageContent)
 def handle_image_message(event):
@@ -403,31 +444,25 @@ def handle_image_message(event):
             blob_api = MessagingApiBlob(api_client)
             raw_bytes = blob_api.get_message_content(event.message.id)
 
+        # ইমেজ সাইজ ৫০০px-এ অপ্টিমাইজড (অত্যন্ত হালকা এবং কাঞ্জি নিখুঁতভাবে পড়ার যোগ্য)
         img = Image.open(io.BytesIO(raw_bytes))
-        img.thumbnail((600, 600))
+        img.thumbnail((500, 500))
         out_buf = io.BytesIO()
-        img.convert('RGB').save(out_buf, format="JPEG", quality=65, optimize=True)
+        img.convert('RGB').save(out_buf, format="JPEG", quality=60, optimize=True)
         image_b64 = base64.b64encode(out_buf.getvalue()).decode("utf-8")
 
         del raw_bytes, img, out_buf
         gc.collect()
 
         prompt = f"""
-        Act as an expert Halal Food Inspector in Japan.
-        Inspect the ingredient list (原材料名) in the image.
+        Halal Inspector Japan. Analyze the ingredient label (原材料名) in the image.
+        Haram: 豚肉, ポーク, 豚脂, 豚脂肪, ラード, ハム, ベーコン, 豚エキス, 豚ゼラチン, 牛肉, 牛脂, 動物性油脂, 混合油脂, コンソメ, 鶏肉, チキン, アルコール, 洋酒, 酒精, ラム, ワイン, ブランディ, ウィスキー, 酒, 料理酒, 清酒, 味醂, みりん, ゼラチン.
+        Syubhah: 加工油脂, 食用油脂, マーガリン, ショートニング, ファットスプレッド, コラーゲン, 乳化剤.
 
         RULES:
-        - Haram: 豚肉, ポーク, 豚脂, 豚脂肪, ラード, ハム, ベーコン, 豚エキス, 豚ゼラチン, 牛肉, 牛脂, 動物性油脂, 混合油脂, コンソメ, 鶏肉, チキン, アルコール, 洋酒, 酒精, ラム, ワイン, ブランディ, ウィスキー, 酒, 料理酒, 清酒, 味醂, みりん, ゼラチン (unless fish/plant).
-        - Syubhah: 加工油脂, 食用油脂, マーガリン, ショートニング, ファットスプレッド, コラーゲン, 乳化剤.
-
-        OUTPUT INSTRUCTIONS:
-        1. Language: Strictly write the full response in {selected_lang}.
-        2. Verdict header:
-           - If Indonesian: [✅ HALAL] / [❌ HARAM] / [⚠️ SYUBHAH]
-           - If Bengali: [✅ হালাল / HALAL] / [❌ হারাম / HARAM] / [⚠️ সন্দেহজনক / SYUBHAH]
-           - Otherwise appropriate language header.
-        3. List detected ingredients (Kanji + Meaning + Ruling).
-        4. Keep it brief and accurate.
+        1. Write in {selected_lang}.
+        2. Verdict: [✅ HALAL] or [❌ HARAM] or [⚠️ SYUBHAH].
+        3. List detected ingredients (Kanji + Meaning). Keep it concise.
         """
 
         result_text = call_gemini_vision(prompt, image_b64)
