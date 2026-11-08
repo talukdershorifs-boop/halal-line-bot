@@ -212,8 +212,8 @@ Analyzes Japanese ingredient labels (原材料名) to identify haram or syubhah 
         "tips": """🛒 日本でのハラールショッピングのヒント:
 
 1. パンを購入する際は「植物油脂」や「植物性」の表示を確認してください。
-2. デザートや洋菓子には風味付けで「洋酒」や「酒精」が多用されます。
-3. お惣菜や練り製品には「みりん」や肉エキスが含まれることが一般的です。""",
+2. デザートや洋菓子には風味付けで「洋酒」や「酒精」が多用されます।
+3. お惣菜や練り製品には「みりん」や肉エキスが含まれることが一般的です।""",
 
         "info": """ℹ️ Halal Check Japan について:
 
@@ -365,27 +365,8 @@ def handle_text_message(event):
                 )
             )
 
-def get_active_model_endpoint():
-    try:
-        list_url = f"https://generativelanguage.googleapis.com/v1beta/models?key={GEMINI_API_KEY}"
-        resp = requests.get(list_url, timeout=10)
-        if resp.status_code == 200:
-            models_data = resp.json().get("models", [])
-            for m in models_data:
-                name = m.get("name", "")
-                methods = m.get("supportedGenerationMethods", [])
-                if "generateContent" in methods and "flash" in name.lower():
-                    return name
-    except Exception:
-        pass
-    return "models/gemini-3.8-flash"
-
 def call_gemini_vision(prompt, image_b64):
-    active_model = get_active_model_endpoint()
-    if not active_model.startswith("models/"):
-        active_model = f"models/{active_model}"
-        
-    url = f"https://generativelanguage.googleapis.com/v1beta/{active_model}:generateContent?key={GEMINI_API_KEY}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key={GEMINI_API_KEY}"
     payload = {
         "contents": [{
             "parts": [
