@@ -1,5 +1,7 @@
 import os
+import io
 from flask import Flask, request, abort
+from PIL import Image
 import google.generativeai as genai
 
 from linebot.v3 import WebhookHandler
@@ -26,8 +28,8 @@ GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 configuration = Configuration(access_token=CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(CHANNEL_SECRET)
 
-# Gemini API সেটআপ
-genai.configure(api_key=GEMINI_API_KEY)
+# মেমোরি ক্র্যাশ ঠেকাতে gRPC বাদ দিয়ে হালকা REST ট্রান্সপোর্ট ব্যবহার
+genai.configure(api_key=GEMINI_API_KEY, transport="rest")
 
 user_languages = {}
 
@@ -291,7 +293,14 @@ def handle_image_message(event):
     try:
         with ApiClient(configuration) as api_client:
             blob_api = MessagingApiBlob(api_client)
-            image_bytes = blob_api.get_message_content(event.message.id)
+            raw_bytes = blob_api.get_message_content(event.message.id)
+
+        # মেমোরি রক্ষা করতে ছবি অপ্টিমাইজ করা
+        img = Image.open(io.BytesIO(raw_bytes))
+        img.thumbnail((1024, 1024))
+        img_buffer = io.BytesIO()
+        img.convert('RGB').save(img_buffer, format="JPEG", quality=80)
+        optimized_bytes = img_buffer.getvalue()
 
         prompt = f"""
         You are an expert Islamic Halal Food Inspector in Japan.
@@ -312,11 +321,10 @@ def handle_image_message(event):
         3. Clarification for Syubhah: Mention that avoiding doubtful matters is Sunnah.
         """
 
-        # গুগল এপিআই-এর প্রস্তাবিত gemini-3.8-flash সরাসরি নির্ধারণ করা হলো
-        model = genai.GenerativeModel("gemini-3.8-flash")
+        model = genai.GenerativeModel("gemini-1.5-flash")
         response = model.generate_content([
             prompt,
-            {"mime_type": "image/jpeg", "data": image_bytes}
+            {"mime_type": "image/jpeg", "data": optimized_bytes}
         ])
         result_text = response.text.strip()
 
