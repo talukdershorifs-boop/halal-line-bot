@@ -348,13 +348,9 @@ def handle_text_message(event):
             )
 
 def call_gemini_vision(prompt, image_b64):
-    """
-    ৫০৩ হাই ডিমান্ড এড়াতে একের অধিক সক্রিয় মডেল দিয়ে তাৎক্ষণিক ফলব্যাক
-    """
     candidate_models = [
-        "models/gemini-3.8-flash",
-        "models/gemini-flash-latest",
-        "models/gemini-2.0-flash-lite"
+        "models/gemini-3.5-flash-lite",
+        "models/gemini-3.8-flash"
     ]
 
     payload = {
@@ -371,7 +367,6 @@ def call_gemini_vision(prompt, image_b64):
     }
 
     last_error = ""
-    # মডেলগুলোর মধ্যে ক্রমান্বয়ে চেষ্টা করবে
     for model_name in candidate_models:
         url = f"https://generativelanguage.googleapis.com/v1beta/{model_name}:generateContent?key={GEMINI_API_KEY}"
         for attempt in range(2):
@@ -403,7 +398,6 @@ def handle_image_message(event):
             blob_api = MessagingApiBlob(api_client)
             raw_bytes = blob_api.get_message_content(event.message.id)
 
-        # ছবির সাইজ ৪০০×৪০০ পিক্সেল এবং কোয়ালিটি ৫০% (সাইজ মাত্র ২০ KB)
         img = Image.open(io.BytesIO(raw_bytes))
         img.thumbnail((400, 400))
         out_buf = io.BytesIO()
