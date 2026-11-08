@@ -1,5 +1,6 @@
 import os
 import io
+import gc
 import base64
 import requests
 from flask import Flask, request, abort
@@ -284,11 +285,10 @@ def handle_text_message(event):
             )
 
 def call_gemini_direct(prompt, image_b64):
-    """সরাসরি অফিশিয়াল REST এন্ডপয়েন্ট কল, যা কোনো লাইব্রেরির ওপর নির্ভরশীল নয়"""
-    candidate_models = ["gemini-2.5-flash", "gemini-3.8-flash", "gemini-2.0-flash"]
+    models = ["gemini-2.5-flash", "gemini-3.8-flash", "gemini-2.0-flash"]
     last_err = ""
 
-    for model_name in candidate_models:
+    for model_name in models:
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={GEMINI_API_KEY}"
         payload = {
             "contents": [{
@@ -306,9 +306,8 @@ def call_gemini_direct(prompt, image_b64):
                 "temperature": 0.2
             }
         }
-        headers = {"Content-Type": "application/json"}
         try:
-            res = requests.post(url, json=payload, headers=headers, timeout=40)
+            res = requests.post(url, json=payload, headers={"Content-Type": "application/json"}, timeout=35)
             if res.status_code == 200:
                 data = res.json()
                 return data["candidates"][0]["content"]["parts"][0]["text"].strip()
@@ -329,12 +328,19 @@ def handle_image_message(event):
             blob_api = MessagingApiBlob(api_client)
             raw_bytes = blob_api.get_message_content(event.message.id)
 
-        # ছবির আকার হালকা করা (RAM ওভারফ্লো রোধ করতে)
-        img = Image.open(io.BytesIO(raw_bytes))
-        img.thumbnail((1200, 1200))
-        img_buffer = io.BytesIO()
-        img.convert('RGB').save(img_buffer, format="JPEG", quality=85)
-        image_b64 = base64.b64encode(img_buffer.getvalue()).decode("utf-8")
+        # মেমরি অপ্টিমাইজড ডাউনস্যাম্পলিং
+        img_file = io.BytesIO(raw_bytes)
+        img = Image.open(img_file)
+        img.draft('RGB', (1000, 1000))
+        img.thumbnail((1000, 1000))
+        
+        out_buf = io.BytesIO()
+        img.convert('RGB').save(out_buf, format="JPEG", quality=75, optimize=True)
+        image_b64 = base64.b64encode(out_buf.getvalue()).decode("utf-8")
+
+        # মেমোরি খালি করা
+        del raw_bytes, img, img_file, out_buf
+        gc.collect()
 
         prompt = f"""
         You are an expert Islamic Halal Food Inspector in Japan.
@@ -363,7 +369,7 @@ def handle_image_message(event):
         result_text = call_gemini_direct(prompt, image_b64)
 
     except Exception as e:
-        result_text = f"দুঃখিত, ছবিটি বিশ্লেষণ করতে সমস্যা হয়েছে। বিস্তারিত: {str(e)}"
+        result_text = f"দুঃখিত, ছবিটি বিশ্লেষণ করতে সমস্যা হয়েছে। ত্রুটি: {str(e)}"
 
     with ApiClient(configuration) as api_client:
         line_bot_api = MessagingApi(api_client)
