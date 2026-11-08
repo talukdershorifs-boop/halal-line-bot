@@ -2,6 +2,7 @@ import os
 import io
 import gc
 import json
+import time
 import base64
 import requests
 from flask import Flask, request, abort
@@ -374,10 +375,8 @@ def handle_text_message(event):
 
 def call_gemini_vision(prompt, image_b64):
     """
-    streamGenerateContent ব্যবহার করে ইনস্ট্যান্ট রেসপন্স তৈরি
-    যাতে কোনোভাবেই Read Timeout না ঘটে।
+    ৫০৩ হাই ডিমান্ড এড়াতে অটোমেটিক রিট্রাই ও স্ট্রিমিং হ্যান্ডলার
     """
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:streamGenerateContent?key={GEMINI_API_KEY}"
     payload = {
         "contents": [{
             "parts": [
@@ -390,48 +389,53 @@ def call_gemini_vision(prompt, image_b64):
             "maxOutputTokens": 500
         }
     }
-    
-    # stream=True এর কারণে গুগল প্রথম চাংক তৈরি করামাত্রই কানেকশন সচল হয়ে যায়
-    res = requests.post(url, json=payload, headers={"Content-Type": "application/json"}, timeout=120, stream=True)
-    
-    if res.status_code != 200:
-        raise Exception(f"Google API Error ({res.status_code}): {res.text}")
 
-    full_text = []
-    # স্ট্রিমিং ডেটা রিসিভ ও জোড়া লাগানো
-    for line in res.iter_lines(decode_unicode=True):
-        if not line:
-            continue
-        cleaned = line.strip()
-        if cleaned.startswith("data: "):
-            cleaned = cleaned[6:].strip()
-        if cleaned.startswith("[") or cleaned.startswith("]"):
-            cleaned = cleaned.strip("[],")
-        if not cleaned:
-            continue
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:streamGenerateContent?key={GEMINI_API_KEY}"
+
+    last_error = ""
+    # ৫০৩ আসলে সর্বোচ্চ ২ বার স্বয়ংক্রিয়ভাবে চেষ্টা করবে
+    for attempt in range(2):
         try:
-            chunk = json.loads(cleaned)
-            candidates = chunk.get("candidates", [])
-            if candidates:
-                parts = candidates[0].get("content", {}).get("parts", [])
-                for p in parts:
-                    if "text" in p:
-                        full_text.append(p["text"])
-        except Exception:
-            continue
+            res = requests.post(url, json=payload, headers={"Content-Type": "application/json"}, timeout=60, stream=True)
+            
+            if res.status_code == 200:
+                full_text = []
+                for line in res.iter_lines(decode_unicode=True):
+                    if not line:
+                        continue
+                    cleaned = line.strip()
+                    if cleaned.startswith("data: "):
+                        cleaned = cleaned[6:].strip()
+                    if cleaned.startswith("[") or cleaned.startswith("]"):
+                        cleaned = cleaned.strip("[],")
+                    if not cleaned:
+                        continue
+                    try:
+                        chunk = json.loads(cleaned)
+                        candidates = chunk.get("candidates", [])
+                        if candidates:
+                            parts = candidates[0].get("content", {}).get("parts", [])
+                            for p in parts:
+                                if "text" in p:
+                                    full_text.append(p["text"])
+                    except Exception:
+                        continue
+                
+                result = "".join(full_text).strip()
+                if result:
+                    return result
+            
+            if res.status_code == 503 and attempt == 0:
+                time.sleep(2)  # সাময়িক ওভারলোড হলে ২ সেকেন্ড অপেক্ষা করে পুনঃপ্রয়াস
+                continue
+            
+            last_error = f"Google API Error ({res.status_code}): {res.text}"
+        except Exception as e:
+            last_error = str(e)
+            if attempt == 0:
+                time.sleep(1)
 
-    result = "".join(full_text).strip()
-    if not result:
-        # ফলব্যাক সরাসরি টেক্সট পার্স
-        try:
-            direct_json = res.json()
-            if isinstance(direct_json, list):
-                direct_json = direct_json[0]
-            result = direct_json["candidates"][0]["content"]["parts"][0]["text"].strip()
-        except Exception:
-            raise Exception("No text response received from AI model.")
-
-    return result
+    raise Exception(last_error)
 
 @handler.add(MessageEvent, message=ImageMessageContent)
 def handle_image_message(event):
@@ -444,7 +448,7 @@ def handle_image_message(event):
             blob_api = MessagingApiBlob(api_client)
             raw_bytes = blob_api.get_message_content(event.message.id)
 
-        # ইমেজ সাইজ ৫০০px-এ অপ্টিমাইজড (অত্যন্ত হালকা এবং কাঞ্জি নিখুঁতভাবে পড়ার যোগ্য)
+        # ইমেজ সাইজ ৫০০px-এ অপ্টিমাইজড
         img = Image.open(io.BytesIO(raw_bytes))
         img.thumbnail((500, 500))
         out_buf = io.BytesIO()
