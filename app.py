@@ -32,7 +32,6 @@ GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 configuration = Configuration(access_token=CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(CHANNEL_SECRET)
 
-# ভাষা ট্র্যাকিং ডিকশনারি
 user_languages = {}
 
 def get_image_source_quick_reply():
@@ -295,7 +294,6 @@ def handle_text_message(event):
     with ApiClient(configuration) as api_client:
         line_bot_api = MessagingApi(api_client)
 
-        # ১. ভাষা পরিবর্তনের সেট কমান্ড
         if raw_text.startswith("Set:"):
             target = raw_text.replace("Set:", "").strip().lower()
             if "indonesian" in target or "indonesia" in target:
@@ -316,7 +314,6 @@ def handle_text_message(event):
             )
             return
 
-        # ২. ক্যামেরা ও গ্যালারি পপ-আপ রিকোয়েস্ট
         if any(k in text for k in ["scan", "take a picture", "ছবি", "potret", "kamera", "foto"]):
             line_bot_api.reply_message(
                 ReplyMessageRequest(
@@ -329,7 +326,6 @@ def handle_text_message(event):
                     ]
                 )
             )
-        # ৩. অন্যান্য বাটন
         elif any(k in text for k in ["haram", "হারাম"]):
             reply = CHECKED_DATA[current_lang]["haram"]
             line_bot_api.reply_message(
@@ -376,8 +372,7 @@ def handle_text_message(event):
             )
 
 def call_gemini_vision(prompt, image_b64):
-    """সর্বাধিক দ্রুত ও কার্যকর ফ্ল্যাশ এন্ডপয়েন্ট ব্যবহার"""
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={GEMINI_API_KEY}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key={GEMINI_API_KEY}"
     payload = {
         "contents": [{
             "parts": [
@@ -390,8 +385,7 @@ def call_gemini_vision(prompt, image_b64):
             "maxOutputTokens": 600
         }
     }
-    # টাইমআউট ৩৫ সেকেন্ড রাখা হলো
-    res = requests.post(url, json=payload, headers={"Content-Type": "application/json"}, timeout=35)
+    res = requests.post(url, json=payload, headers={"Content-Type": "application/json"}, timeout=60)
     if res.status_code == 200:
         data = res.json()
         return data["candidates"][0]["content"]["parts"][0]["text"].strip()
@@ -409,7 +403,6 @@ def handle_image_message(event):
             blob_api = MessagingApiBlob(api_client)
             raw_bytes = blob_api.get_message_content(event.message.id)
 
-        # আল্ট্রা-লাইট ইমেজ কম্প্রেশন (কাঞ্জি অক্ষুণ্ণ রেখে সাইজ ৩০-৪০ KB তে রূপান্তর)
         img = Image.open(io.BytesIO(raw_bytes))
         img.thumbnail((600, 600))
         out_buf = io.BytesIO()
