@@ -2,7 +2,6 @@ import os
 import io
 import gc
 import json
-import time
 import base64
 import requests
 from flask import Flask, request, abort
@@ -19,9 +18,7 @@ from linebot.v3.messaging import (
     TextMessage,
     QuickReply,
     QuickReplyItem,
-    MessageAction,
-    CameraAction,
-    CameraRollAction
+    MessageAction
 )
 from linebot.v3.webhooks import MessageEvent, TextMessageContent, ImageMessageContent
 
@@ -35,12 +32,6 @@ configuration = Configuration(access_token=CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(CHANNEL_SECRET)
 
 user_languages = {}
-
-def get_image_source_quick_reply():
-    return QuickReply(items=[
-        QuickReplyItem(action=CameraAction(label="📷 ক্যামেরা (Camera)")),
-        QuickReplyItem(action=CameraRollAction(label="🖼️ গ্যালারি (Gallery)"))
-    ])
 
 def get_language_selection_menu():
     return QuickReply(items=[
@@ -72,28 +63,28 @@ CHECKED_DATA = {
 
         "syubhah": """⚠️ সন্দেহজনক উপাদানসমূহ (Syubhah):
 
-• 乳化剤 (ইমালসিফায়ার) - উৎস উদ্ভিদ না প্রাণিজ তা স্পষ্ট না হলে সন্দেহজনক।
+• 乳化剤 (ইমালসিফায়ার) - উদ্ভিদ না প্রাণিজ স্পষ্ট না হলে।
 • ショートニング (শর্টনিং) - বেকারি আইটেমে প্রাণিজ ফ্যাট থাকতে পারে।
-• マーガリン (মার্জারিন) - প্রাণিজ তেলের সংমিশ্রণ থাকতে পারে।
-• ファットスプレッド (ফ্যাটস্প্রেড) - মিশ্র প্রক্রিয়াজাত চর্বি।
+• マーガリン (মার্জারিন) - প্রাণিজ তেলের মিশ্রণ থাকতে পারে।
+• ファットスプレッド (ফ্যাটস্প্রেড) - মিশ্র চর্বি।
 • 加工油脂 (প্রক্রিয়াজাত চর্বি) - সোর্স অনির্দিষ্ট থাকলে।
-• コラーゲン / ゼラチン - মাছের নিশ্চিত উল্লেখ না থাকলে পরিহার্য।""",
+• コラーゲン / ゼラチン - মাছের নিশ্চিত উল্লেখ না থাকলে।""",
 
         "tips": """🛒 জাপানে হালাল কেনাকাটার টিপস:
 
 ১. পাউরুটি কেনার সময় প্যাকেটে '植物性' বা '植物油脂' লেখা আছে কি না লক্ষ্য করুন।
-২. সাধারণ সুপারমার্কেট থেকে মাংস বা সসেজ কেনা পরিহার করুন, হালাল গ্রোসারি থেকে সংগ্রহ করুন।
+২. সাধারণ সুপারমার্কেট থেকে মাংস বা সসেজ কেনা পরিহার করুন, হালাল দোকান থেকে কিনুন।
 ৩. মিষ্টি ও কেক-পেস্ট্রিতে প্রায়শই '洋酒' (মদ) থাকে, তাই উপাদান দেখে নিন।
-৪. সিফুড বা স্ন্যাক্সে অনেক সময় ফ্লেভার হিসেবে 'みりん' বা '料理酒' ব্যবহার করা হয়।""",
+৪. সিফুড বা স্ন্যাক্সে প্রায়ই ফ্লেভার হিসেবে 'みりん' বা '料理酒' ব্যবহার করা হয়।""",
 
         "info": """ℹ️ Halal Check Japan পরিচিতি ও নিয়ম:
 
-এই বটটি জাপানি খাদ্যপণ্যের লেবেল (原材料名) পড়ে হারাম ও সন্দেহজনক উপাদান শনাক্ত করতে সাহায্য করে।
+এই বটটি জাপানি খাদ্যপণ্যের লেবেল (原材料名) পড়ে হারাম ও সন্দেহজনক উপাদান শনাক্ত করে।
 
 📷 ছবি তোলার নিয়ম:
 • বারকোড নয়, উপাদানের তালিকার (原材料名) সোজা ও স্পষ্ট ছবি তুলুন।""",
 
-        "lang_confirm": "ভাষা 'বাংলা' হিসেবে সেট করা হয়েছে! নিচের মেনু ব্যবহার করুন বা ছবি পাঠান।"
+        "lang_confirm": "ভাষা 'বাংলা' হিসেবে সেট করা হয়েছে! পণ্যের উপাদানের স্পষ্ট ছবি পাঠান।"
     },
 
     "Indonesian": {
@@ -102,7 +93,7 @@ CHECKED_DATA = {
 • 豚肉、ポーク | Daging Babi (Pork)
 • 豚脂肪、豚脂 | Lemak Babi (Pork Fat)
 • ラード、ハム、ベーコン | Lard, Ham, Bacon
-• 豚エキス | Ekstrak Daging Babi
+• 豚エキス | Ekstrak Babi
 • 豚ゼラチン | Gelatin Babi
 • 牛肉、牛脂 | Daging/Lemak Sapi Non-Halal
 • 鶏肉、チキン | Daging Ayam Non-Halal
@@ -110,37 +101,34 @@ CHECKED_DATA = {
 • コンソメ | Kaldu Sup Consomme
 • アルコール、洋酒 | Alkohol, Minuman Keras
 • 酒、清酒、料理酒 | Sake, Cooking Rice Wine
-• 味醂、みりん | Mirin (Sake Manis Masak)
+• 味醂、みりん | Mirin (Sake Manis)
 • 酒精 | Alkohol Etil (Pengawet)
 • ラム、ワイン、ブランディ | Rum, Wine, Brandy""",
 
         "syubhah": """⚠️ Bahan yang Diragukan (Syubhah):
 
-• 乳化剤 (Emulsifier) - Syubhah kecuali ada keterangan nabati (植物性).
-• ショートニング (Shortening) - Sering kali mengandung lemak hewani.
+• 乳化剤 (Emulsifier) - Syubhah kecuali nabati (植物性).
+• ショートニング (Shortening) - Sering mengandung lemak hewani.
 • マーガリン (Margarine) - Mungkin mengandung lemak hewani.
 • ファットスプレッド (Fatspread) - Campuran lemak olahan.
 • 加工油脂 (Processed Fat) - Sumber lemak tidak jelas.
-• コラーゲン / ゼラチン - Hindari kecuali bertuliskan dari ikan (魚由来).
+• コラーゲン / ゼラチン - Hindari kecuali dari ikan (魚由来).""",
 
-💡 Catatan: Menghindari syubhah adalah bagian dari menjaga kehalalan konsumsi.""",
+        "tips": """🛒 Tips Belanja Halal di Jepang:
 
-        "tips": """🛒 Tips Belanja Makanan Halal di Jepang:
-
-1. Saat membeli roti, pastikan ada tulisan 植物性 (nabati) atau 植物油脂 (minyak nabati).
-2. Hindari membeli daging segar atau sosis di supermarket biasa tanpa logo Halal.
-3. Kue, pudding, dan cokelat Jepang sangat sering diberi 洋酒 (minuman keras) sebagai aroma.
-4. Banyak snack kerupuk beras (Senbei) yang dibumbui dengan みりん (mirin) atau sake.""",
+1. Saat beli roti, pastikan ada tulisan 植物性 (nabati) atau 植物油脂.
+2. Hindari daging mentah/sosis di supermarket biasa tanpa logo Halal.
+3. Kue dan permen sering mengandung 洋酒 (minuman keras) sebagai aroma.
+4. Snack kerupuk beras sering menggunakan みりん atau sake.""",
 
         "info": """ℹ️ Tentang Halal Check Japan:
 
 Bot ini memeriksa daftar komposisi makanan Jepang (原材料名) untuk mendeteksi bahan haram dan syubhah.
 
-📷 Cara Mengambil Foto:
-• Foto bagian komposisi (原材料名), BUKAN barcode kemasan.
-• Pastikan tulisan kanji terlihat jelas dan terang.""",
+📷 Panduan Foto:
+• Foto daftar bahan (原材料名), BUKAN barcode.""",
 
-        "lang_confirm": "Bahasa telah diatur ke Bahasa Indonesia! Silakan gunakan menu di bawah atau kirim foto komposisi makanan."
+        "lang_confirm": "Bahasa telah diatur ke Bahasa Indonesia! Silakan kirim foto komposisi makanan."
     },
 
     "English": {
@@ -174,7 +162,7 @@ Bot ini memeriksa daftar komposisi makanan Jepang (原材料名) untuk mendeteks
 
 1. When buying bread, look for 植物性 (plant-derived) or 植物油脂.
 2. Avoid buying raw meat from general supermarkets unless certified Halal.
-3. Confectionery and desserts frequently contain 洋酒 (Western alcohol).
+3. Confectionery frequently contains 洋酒 (Western alcohol).
 4. Many fish snacks contain Mirin or cooking sake.""",
 
         "info": """ℹ️ About Halal Check Japan:
@@ -184,7 +172,7 @@ Analyzes Japanese ingredient labels (原材料名) to identify haram or syubhah 
 📷 Photo Guidelines:
 • Capture the ingredient list (原材料名), NOT the barcode.""",
 
-        "lang_confirm": "Language set to English! Please use the menu or send a clear picture."
+        "lang_confirm": "Language set to English! Please send a clear picture."
     },
 
     "Japanese": {
@@ -222,12 +210,9 @@ Analyzes Japanese ingredient labels (原材料名) to identify haram or syubhah 
 
         "info": """ℹ️ Halal Check Japan について:
 
-原材料名（食品表示ラベル）を撮影して送信するだけで、AIがハラームや疑わしい成分を判定します。
+原材料名（食品表示ラベル）を撮影して送信するだけで、AIがハラームや疑わしい成分を判定します。""",
 
-📷 撮影のコツ:
-• バーコードではなく「原材料名」の枠内を撮影してください。""",
-
-        "lang_confirm": "言語が「日本語」に設定されました。メニューを使用するか、原材料名の写真を送信してください。"
+        "lang_confirm": "言語が「日本語」に設定されました。原材料名の写真を送信してください。"
     },
 
     "Arabic": {
@@ -316,19 +301,7 @@ def handle_text_message(event):
             )
             return
 
-        if any(k in text for k in ["scan", "take a picture", "ছবি", "potret", "kamera", "foto"]):
-            line_bot_api.reply_message(
-                ReplyMessageRequest(
-                    reply_token=event.reply_token,
-                    messages=[
-                        TextMessage(
-                            text="Pilih cara kirim foto / ছবির উৎস বেছে নিন:",
-                            quick_reply=get_image_source_quick_reply()
-                        )
-                    ]
-                )
-            )
-        elif any(k in text for k in ["haram", "হারাম"]):
+        if any(k in text for k in ["haram", "হারাম"]):
             reply = CHECKED_DATA[current_lang]["haram"]
             line_bot_api.reply_message(
                 ReplyMessageRequest(reply_token=event.reply_token, messages=[TextMessage(text=reply)])
@@ -374,9 +347,7 @@ def handle_text_message(event):
             )
 
 def call_gemini_vision(prompt, image_b64):
-    """
-    ৫০৩ হাই ডিমান্ড এড়াতে অটোমেটিক রিট্রাই ও স্ট্রিমিং হ্যান্ডলার
-    """
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key={GEMINI_API_KEY}"
     payload = {
         "contents": [{
             "parts": [
@@ -386,56 +357,17 @@ def call_gemini_vision(prompt, image_b64):
         }],
         "generationConfig": {
             "temperature": 0.1,
-            "maxOutputTokens": 500
+            "maxOutputTokens": 350
         }
     }
-
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:streamGenerateContent?key={GEMINI_API_KEY}"
-
-    last_error = ""
-    # ৫০৩ আসলে সর্বোচ্চ ২ বার স্বয়ংক্রিয়ভাবে চেষ্টা করবে
-    for attempt in range(2):
-        try:
-            res = requests.post(url, json=payload, headers={"Content-Type": "application/json"}, timeout=60, stream=True)
-            
-            if res.status_code == 200:
-                full_text = []
-                for line in res.iter_lines(decode_unicode=True):
-                    if not line:
-                        continue
-                    cleaned = line.strip()
-                    if cleaned.startswith("data: "):
-                        cleaned = cleaned[6:].strip()
-                    if cleaned.startswith("[") or cleaned.startswith("]"):
-                        cleaned = cleaned.strip("[],")
-                    if not cleaned:
-                        continue
-                    try:
-                        chunk = json.loads(cleaned)
-                        candidates = chunk.get("candidates", [])
-                        if candidates:
-                            parts = candidates[0].get("content", {}).get("parts", [])
-                            for p in parts:
-                                if "text" in p:
-                                    full_text.append(p["text"])
-                    except Exception:
-                        continue
-                
-                result = "".join(full_text).strip()
-                if result:
-                    return result
-            
-            if res.status_code == 503 and attempt == 0:
-                time.sleep(2)  # সাময়িক ওভারলোড হলে ২ সেকেন্ড অপেক্ষা করে পুনঃপ্রয়াস
-                continue
-            
-            last_error = f"Google API Error ({res.status_code}): {res.text}"
-        except Exception as e:
-            last_error = str(e)
-            if attempt == 0:
-                time.sleep(1)
-
-    raise Exception(last_error)
+    
+    # অতি দ্রুত প্রসেসিং (টাইমআউট ৪৫ সেকেন্ড)
+    res = requests.post(url, json=payload, headers={"Content-Type": "application/json"}, timeout=45)
+    if res.status_code == 200:
+        data = res.json()
+        return data["candidates"][0]["content"]["parts"][0]["text"].strip()
+    else:
+        raise Exception(f"Google API Error ({res.status_code}): {res.text}")
 
 @handler.add(MessageEvent, message=ImageMessageContent)
 def handle_image_message(event):
@@ -448,25 +380,26 @@ def handle_image_message(event):
             blob_api = MessagingApiBlob(api_client)
             raw_bytes = blob_api.get_message_content(event.message.id)
 
-        # ইমেজ সাইজ ৫০০px-এ অপ্টিমাইজড
+        # আল্ট্রা-লাইট ৪৫০px ইমেজ (নিমিষেই আপলোড ও এআই প্রসেস নিশ্চিত করবে)
         img = Image.open(io.BytesIO(raw_bytes))
-        img.thumbnail((500, 500))
+        img.thumbnail((450, 450))
         out_buf = io.BytesIO()
-        img.convert('RGB').save(out_buf, format="JPEG", quality=60, optimize=True)
+        img.convert('RGB').save(out_buf, format="JPEG", quality=55, optimize=True)
         image_b64 = base64.b64encode(out_buf.getvalue()).decode("utf-8")
 
         del raw_bytes, img, out_buf
         gc.collect()
 
         prompt = f"""
-        Halal Inspector Japan. Analyze the ingredient label (原材料名) in the image.
+        Act as Halal Food Inspector Japan.
+        Inspect ingredient list (原材料名).
         Haram: 豚肉, ポーク, 豚脂, 豚脂肪, ラード, ハム, ベーコン, 豚エキス, 豚ゼラチン, 牛肉, 牛脂, 動物性油脂, 混合油脂, コンソメ, 鶏肉, チキン, アルコール, 洋酒, 酒精, ラム, ワイン, ブランディ, ウィスキー, 酒, 料理酒, 清酒, 味醂, みりん, ゼラチン.
         Syubhah: 加工油脂, 食用油脂, マーガリン, ショートニング, ファットスプレッド, コラーゲン, 乳化剤.
 
-        RULES:
-        1. Write in {selected_lang}.
+        RESPONSE RULES:
+        1. Write strictly in {selected_lang}.
         2. Verdict: [✅ HALAL] or [❌ HARAM] or [⚠️ SYUBHAH].
-        3. List detected ingredients (Kanji + Meaning). Keep it concise.
+        3. List detected items with Kanji and translation concisely.
         """
 
         result_text = call_gemini_vision(prompt, image_b64)
