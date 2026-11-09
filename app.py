@@ -166,4 +166,609 @@ COUNTRY_DETAILS = {
 • 猪皮、猪肉浸膏、火腿、培根 | শুকরের চামড়া, নির্যাস, হ্যাম
 • 猪血、鸭血、血旺 | রক্ত দিয়ে তৈরি খাবার
 • 料酒、黄酒、白酒 | চীনা রান্নার ওয়াইন/মদ
-• 花雕酒、米酒、食用酒精 | চালের মদ ও অ্যালকোহ
+• 花雕酒、米酒、食用酒精 | চালের মদ ও অ্যালকোহল
+• 鸡精、浓汤宝 (অ-হালাল ব্রোথ)
+• 明胶、阿胶 (অ-হালাল প্রাণিজ জেলাটিন)""",
+
+        "syubhah": """⚠️ [চীন 🇨🇳] সন্দেহজনক উপাদান (Syubhah):
+• 起酥油 (শর্টনিং) - প্রাণিজ ফ্যাটের মিশ্রণ থাকতে পারে
+• 人造奶油、人造黄油 (মার্জারিন)
+• 乳化剂 (ইমালসিফায়ার) - উদ্ভিদ না প্রাণী অস্পষ্ট হলে
+• 食用香精 (ফ্লেভারিং) - ওয়াইন দ্রাবক ব্যবহৃত হতে পারে
+• 单双甘油脂肪酸酯 (E471)
+
+📜 নবিজি ﷺ বলেছেন: 'যে ব্যক্তি সন্দেহজনক বিষয় থেকে বাঁচল, সে দ্বীন রক্ষা করল।' [বুখারি: ৫২]""",
+
+        "tips": """🛒 [চীন 🇨🇳] কেনাকাটার টিপস:
+১. প্যাকেটের গায়ে সবুজ '清真' (Halal) সিল আছে কি না আগে নিশ্চিত হোন।
+২. চাইনিজ স্ন্যাকস ও নুডুলসে রান্নার ওয়াইন '料酒' প্রচুর থাকে, উপাদান দেখুন।
+৩. জেলাটিনযুক্ত ক্যান্ডি বা জেলি এড়িয়ে চলুন।""",
+
+        "info": """ℹ️ [চীন 🇨🇳] নির্দেশিকা:
+• পণ্যের উপাদানের তালিকার (配料 / 配料表) অংশের ছবি স্ক্যান করুন।
+• চীনে অনুমোদিত হালাল অথরিটির '清真' সিল দেখে কেনা সবচেয়ে নিরাপদ।"""
+    },
+
+    "Korea": {
+        "title": "KR HALAL FOOD CHECKER 🇰🇷",
+        "advice_app": "আমাদের এই বটটি একটি ফ্রি এআই টুল। দক্ষিণ কোরিয়ায় শতভাগ নিরাপদ খাদ্য বাছাই করতে 'Mufko' অথবা 'KMF Halal' অ্যাপ ব্যবহারের অনুরোধ করা হচ্ছে।",
+        "haram": """🚫 [কোরিয়া 🇰🇷] নিশ্চিত হারাম উপাদান:
+• 돼지고기 (Pork) | শুকরের মাংস
+• 돈지 / 라드 (Lard) | শুকরের চর্বি
+• 햄, 베이컨, 돼지껍데기 | হ্যাম, বেকন, শুকরের চামড়া
+• 맛술, 미림 | রান্নার মদ (Cooking wine/Mirin)
+• 청주, 주정 | চুংজু মদ, অ্যালকোহল
+• 쇠고기, 닭고기 | সাধারণ জবাইবিহীন মাংস
+• 동물성유지 | প্রাণিজ চর্বি""",
+
+        "syubhah": """⚠️ [কোরিয়া 🇰🇷] সন্দেহজনক উপাদান (Syubhah):
+• 쇼트닝 (শর্টনিং) - বেকারি ফ্যাট
+• 마가린 (মার্জারিন) - মিশ্র প্রাণিজ চর্বি
+• 유화제 (ইমালসিফায়ার E471)
+• 가공유지 (প্রক্রিয়াজাত চর্বি)
+• 젤라틴 (জেলাটিন - মাছের না হলে)
+• 고추장, 쌈장, 된장 | ফারমেন্টেড সসে অ্যালকোহল/স্পিরিট মিশ্রণ থাকতে পারে
+
+📜 নবিজি ﷺ বলেছেন: 'সন্দেহজনক বিষয় থেকে দূরে থাকাই দ্বীন রক্ষা করা।' [বুখারি: ৫২]""",
+
+        "tips": """🛒 [কোরিয়া 🇰🇷] কেনাকাটার টিপস:
+১. প্যাকেটে 식물성유지 (উদ্ভিজ্জ তেল) লেখা থাকলে নিরাপদ।
+২. জনপ্রিয় রামিয়ন (라면)-এর স্যুপ ব্রোথে শুকরের নির্যাস প্রায়ই থাকে, সতর্ক থাকুন।
+৩. কোরিয়ান সস কেনার সময় 주정 (অ্যালকোহল) আছে কি না দেখে নিন।""",
+
+        "info": """ℹ️ [কোরিয়া 🇰🇷] নির্দেশিকা:
+• পণ্যের উপাদানের তালিকার (원재료명) স্পষ্ট ছবি পাঠান।
+• কোরিয়ায় শতভাগ নিশ্চিত থাকতে 'Mufko' অ্যাপ বা KMF Halal সিল চেক করুন।"""
+    },
+
+    "USA": {
+        "title": "US HALAL FOOD CHECKER 🇺🇸",
+        "advice_app": "আমাদের এই বটটি একটি ফ্রি এআই টুল। যুক্তরাষ্ট্রে ১০০% নির্ভুল ও হালাল পণ্য নিশ্চিত করতে 'Scan Halal' অথবা 'Crescent Halal' অ্যাপ ব্যবহার করুন।",
+        "haram": """🚫 [USA 🇺🇸] নিশ্চিত হারাম উপাদান:
+• Pork, Bacon, Ham, Pork Lard | শুকর ও চর্বি
+• Pork Gelatin / Gelatin (অ-হালাল উৎস)
+• Carmine / Cochineal Extract (E120) | লাল পোকার রঙ
+• Pure Vanilla Extract (আইন অনুযায়ী ৩৫%+ অ্যালকোহল থাকে)
+• Brewer's Yeast (বিয়ার তৈরির ইস্ট)
+• Wine, Rum flavoring containing alcohol
+• Non-Zabiha Beef / Poultry extracts""",
+
+        "syubhah": """⚠️ [USA 🇺🇸] সন্দেহজনক উপাদান (Syubhah):
+• Mono and diglycerides (E471) - উৎস অস্পষ্ট হলে
+• Shortening (প্রাণিজ না উদ্ভিজ্জ পরিষ্কার না হলে)
+• Whey powder / Rennet in Cheese (প্রাণিজ রেনেট)
+• Enzymes (Lipase, Pepsin)
+• Natural & Artificial Flavors (অ্যালকোহল দ্রাবক থাকতে পারে)
+
+📜 নবিজি ﷺ বলেছেন: 'সন্দেহজনক বিষয় পরিহার করাই উত্তম।' [বুখারি: ৫২]""",
+
+        "tips": """🛒 [USA 🇺🇸] কেনাকাটার টিপস:
+১. Kosher Pareve (OU Pareve, Circle-U) সিল থাকলে মাংস ও অ্যালকোহলমুক্ত থাকে।
+২. মার্শমেলো, গামি ক্যান্ডিতে Gelatin থাকে যা অধিকাংশ ক্ষেত্রে শুকর থেকে আসে।
+৩. পাউরুটি কেনার সময় '100% Plant Based' বা 'Vegetable Shortening' লেখা খুঁজুন।""",
+
+        "info": """ℹ️ [USA 🇺🇸] নির্দেশিকা:
+• প্যাকেটের 'Ingredients' অংশের স্পষ্ট ছবি স্ক্যান করুন।
+• সার্বিক যাচাইয়ের জন্য 'Scan Halal' অ্যাপ ব্যবহার করতে পারেন।"""
+    },
+
+    "Bangladesh": {
+        "title": "BD HALAL FOOD CHECKER 🇧🇩",
+        "advice_app": "আমাদের এই বটটি একটি ফ্রি এআই টুল। স্থানীয় ও আমদানিকৃত খাদ্যে নিশ্চিত থাকতে 'ইসলামিক ফাউন্ডেশন বাংলাদেশ' ও বিএসটিআই হালাল লোগো অনুসরণ করুন।",
+        "haram": """🚫 [বাংলাদেশ 🇧🇩] নিশ্চিত হারাম উপাদান:
+• পর্ক, বেকন, হ্যাম, লার্ড (আমদানিকৃত খাদ্যে)
+• অ-হালাল প্রাণিজ জেলাটিন (আমদানিকৃত জেলি, চকলেটে)
+• অ্যালকোহল, স্পিরিট, রাম এসেন্স
+• ক্যারমাইন / কোচিনিল (E120 লাল কৃত্রিম রঙ)
+• অ-হালাল বিদেশি মাংসের নির্যাস ও ব্রোথ""",
+
+        "syubhah": """⚠️ [বাংলাদেশ 🇧🇩] সন্দেহজনক উপাদান (Syubhah):
+• ইমালসিফায়ার (E471, E472a-f, E481) - ভেজিটেবল উৎস উল্লেখ না থাকলে
+• শর্টনিং ও মার্জারিন (বেকারি পণ্যে প্রাণিজ চর্বির ব্যবহার)
+• রেনেট (Rennet) - আমদানিকৃত চিজে ব্যবহৃত এনজাইম
+• হুই পাউডার (Whey powder)
+• কৃত্রিম সুগন্ধি ও এসেন্স
+
+📜 নবিজি ﷺ বলেছেন: 'যে ব্যক্তি সন্দেহজনক বিষয় থেকে বাঁচল, সে দ্বীন রক্ষা করল।' [বুখারি: ৫২]""",
+
+        "tips": """🛒 [বাংলাদেশ 🇧🇩] কেনাকাটার টিপস:
+১. আমদানিকৃত বিস্কুট বা চকলেটের মোড়কে E471 ও Gelatin এর উৎস যাচাই করুন।
+২. সাধারণ বেকারি থেকে কেক/পেস্ট্রি কেনার সময় শর্টনিংয়ের উৎস জেনে নিন।
+৩. মোড়কের গায়ে ইসলামিক ফাউন্ডেশন বা স্বীকৃত হালাল সনদ লোগো দেখে নিন।""",
+
+        "info": """ℹ️ [বাংলাদেশ 🇧🇩] নির্দেশিকা:
+• মোড়কের 'উপাদান' বা 'Ingredients' অংশের সোজা ছবি তুলুন।
+• স্থানীয় পণ্যে ইসলামিক ফাউন্ডেশনের হালাল লোগো নিশ্চিত থাকুন।"""
+    }
+}
+
+COUNTRY_RULES = {
+    "Japan": {
+        "title": "JP HALAL FOOD CHECKER 🇯🇵",
+        "haram_prompt": """
+        TARGET REGION: JAPAN.
+        Header: 原材料名.
+        - HARAM: 豚肉, 豚脂, ラード, 豚骨, ポークエキス, 豚ゼラチン, ハム, ベーコン, 牛肉/鶏肉 (unless Halal marked), 動物性油脂, 混合油脂, コンソメ, アルコール, 洋酒, 酒精, 酒, 料理酒, 清酒, 味醂 (みりん), 発酵調味料 (with alcohol).
+        - SYUBHAH: ショートニング, マーガリン, ファットスプレッド, 乳化剤 (E471/E472), 加工油脂, コラーゲン, ゼラチン.
+        """
+    },
+    "China": {
+        "title": "CN HALAL FOOD CHECKER 🇨🇳",
+        "haram_prompt": """
+        TARGET REGION: CHINA.
+        Header: 配料 / 配料表.
+        - HARAM: 猪肉, 猪油, 猪脂, 猪皮, 猪血, 培根, 火腿, 动物油脂, 鸡精, 浓汤宝, 料酒 (Chinese cooking wine), 黄酒, 白酒, 花雕酒, 米酒, 食用酒精, 啤酒, 明胶, 阿胶, 鸭血.
+        - SYUBHAH: 起酥油, 人造奶油, 人造黄油, 乳化剂, 酶制剂, 食用香精.
+        """
+    },
+    "Korea": {
+        "title": "KR HALAL FOOD CHECKER 🇰🇷",
+        "haram_prompt": """
+        TARGET REGION: SOUTH KOREA.
+        Header: 원재료명.
+        - HARAM: 돼지고기, 돈지/라드, 햄, 베이컨, 젤라틴 (돼지), 쇠고기/닭고기 (unless Halal marked), 맛술 (Cooking wine), 청주, 주정 (Alcohol), 양조주, 동물성유지.
+        - SYUBHAH: 쇼트닝, 마가린, 유화제 (E471), 가공유지, 콜라겐, 효소제제.
+        """
+    },
+    "USA": {
+        "title": "US HALAL FOOD CHECKER 🇺🇸",
+        "haram_prompt": """
+        TARGET REGION: USA (FDA Standard).
+        Header: Ingredients.
+        - HARAM: Pork, Bacon, Ham, Lard, Pork Gelatin, Non-Zabiha Beef/Chicken extracts, Carmine/Cochineal extract (E120), Pure Vanilla Extract (with alcohol), Brewer's yeast, Alcohol, Wine, Rum flavoring.
+        - SYUBHAH: Gelatin, Mono and diglycerides (E471), Polysorbate 60/80, Whey powder, Enzymes (Lipase, Pepsin), Natural/Artificial Flavors.
+        """
+    },
+    "Bangladesh": {
+        "title": "BD HALAL FOOD CHECKER 🇧🇩",
+        "haram_prompt": """
+        TARGET REGION: BANGLADESH.
+        Header: উপাদান, উপাদানসমূহ, Ingredients.
+        - HARAM: শুয়োরের মাংস/চর্বি (Pork, Lard), অ-হালাল প্রাণিজ জেলাটিন, ক্যারমাইন/E120, অ্যালকোহল, রাম এসেন্স.
+        - SYUBHAH: ইমালসিফায়ার (E471, E472), শর্টনিং, মার্জারিন, পনিরের রেনেট, হুই পাউডার.
+        """
+    }
+}
+
+def get_country_selection_menu():
+    return QuickReply(items=[
+        QuickReplyItem(action=MessageAction(label="🇯🇵 Japan", text="Country: Japan")),
+        QuickReplyItem(action=MessageAction(label="🇨🇳 China", text="Country: China")),
+        QuickReplyItem(action=MessageAction(label="🇰🇷 Korea", text="Country: Korea")),
+        QuickReplyItem(action=MessageAction(label="🇺🇸 USA", text="Country: USA")),
+        QuickReplyItem(action=MessageAction(label="🇧🇩 Bangladesh", text="Country: Bangladesh"))
+    ])
+
+def get_language_selection_menu():
+    return QuickReply(items=[
+        QuickReplyItem(action=MessageAction(label="🇧🇩 বাংলা", text="Set: Bengali")),
+        QuickReplyItem(action=MessageAction(label="🇬🇧 English", text="Set: English")),
+        QuickReplyItem(action=MessageAction(label="🇮🇩 Indonesia", text="Set: Indonesian")),
+        QuickReplyItem(action=MessageAction(label="🇯🇵 日本語", text="Set: Japanese")),
+        QuickReplyItem(action=MessageAction(label="🇸🇦 العربية", text="Set: Arabic"))
+    ])
+
+def get_direct_camera_quick_reply(lang="Bengali"):
+    label = I18N.get(lang, I18N["Bengali"])["cam_btn"]
+    return QuickReply(items=[
+        QuickReplyItem(action=CameraAction(label=label))
+    ])
+
+def create_halal_flex_card(status, reason, items_text, lang="Bengali", country="Japan"):
+    lang_data = I18N.get(lang, I18N["Bengali"])
+    country_info = COUNTRY_RULES.get(country, COUNTRY_RULES["Japan"])
+    country_header = country_info["title"]
+    advice_text = COUNTRY_DETAILS.get(country, COUNTRY_DETAILS["Japan"])["advice_app"]
+
+    status_upper = status.upper().strip()
+
+    if "HALAL" in status_upper:
+        header_color = "#107C41"
+        status_title = lang_data["status_halal"]
+        badge_bg = "#E8F5E9"
+        badge_color = "#1B5E20"
+    elif "HARAM" in status_upper:
+        header_color = "#D32F2F"
+        status_title = lang_data["status_haram"]
+        badge_bg = "#FFEBEE"
+        badge_color = "#B71C1C"
+    else:
+        header_color = "#E65100"
+        status_title = lang_data["status_syubhah"]
+        badge_bg = "#FFF3E0"
+        badge_color = "#E65100"
+
+    flex_json = {
+        "type": "bubble",
+        "size": "mega",
+        "header": {
+            "type": "box",
+            "layout": "vertical",
+            "backgroundColor": header_color,
+            "paddingAll": "16px",
+            "contents": [
+                {
+                    "type": "text",
+                    "text": country_header,
+                    "color": "#FFFFFF",
+                    "size": "xs",
+                    "weight": "bold",
+                    "letterSpacing": "1px"
+                },
+                {
+                    "type": "text",
+                    "text": status_title,
+                    "color": "#FFFFFF",
+                    "size": "xl",
+                    "weight": "bold",
+                    "margin": "sm"
+                }
+            ]
+        },
+        "body": {
+            "type": "box",
+            "layout": "vertical",
+            "paddingAll": "18px",
+            "contents": [
+                {
+                    "type": "box",
+                    "layout": "vertical",
+                    "backgroundColor": badge_bg,
+                    "cornerRadius": "8px",
+                    "paddingAll": "12px",
+                    "contents": [
+                        {
+                            "type": "text",
+                            "text": lang_data["label_reason"],
+                            "weight": "bold",
+                            "size": "xs",
+                            "color": badge_color
+                        },
+                        {
+                            "type": "text",
+                            "text": reason if reason else "Completed",
+                            "size": "sm",
+                            "color": "#333333",
+                            "wrap": True,
+                            "margin": "xs"
+                        }
+                    ]
+                },
+                {
+                    "type": "box",
+                    "layout": "vertical",
+                    "margin": "md",
+                    "contents": [
+                        {
+                            "type": "text",
+                            "text": lang_data["label_items"],
+                            "weight": "bold",
+                            "size": "xs",
+                            "color": "#666666"
+                        },
+                        {
+                            "type": "text",
+                            "text": items_text if items_text else "-",
+                            "size": "sm",
+                            "color": "#111111",
+                            "wrap": True,
+                            "margin": "xs"
+                        }
+                    ]
+                },
+                {
+                    "type": "separator",
+                    "margin": "lg"
+                },
+                {
+                    "type": "box",
+                    "layout": "vertical",
+                    "backgroundColor": "#FFFDE7",
+                    "cornerRadius": "6px",
+                    "paddingAll": "10px",
+                    "margin": "md",
+                    "contents": [
+                        {
+                            "type": "text",
+                            "text": lang_data["label_hadith_title"],
+                            "weight": "bold",
+                            "size": "xxs",
+                            "color": "#F57F17"
+                        },
+                        {
+                            "type": "text",
+                            "text": lang_data["hadith_text"],
+                            "size": "xxs",
+                            "color": "#4E342E",
+                            "wrap": True,
+                            "margin": "xs"
+                        }
+                    ]
+                },
+                {
+                    "type": "box",
+                    "layout": "vertical",
+                    "backgroundColor": "#F4F6F8",
+                    "cornerRadius": "6px",
+                    "paddingAll": "10px",
+                    "margin": "sm",
+                    "contents": [
+                        {
+                            "type": "text",
+                            "text": lang_data["label_advice_title"],
+                            "weight": "bold",
+                            "size": "xxs",
+                            "color": "#1A73E8"
+                        },
+                        {
+                            "type": "text",
+                            "text": advice_text,
+                            "size": "xxs",
+                            "color": "#555555",
+                            "wrap": True,
+                            "margin": "xs"
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+    return FlexContainer.from_json(json.dumps(flex_json))
+
+@app.route("/", methods=['GET'])
+def index():
+    return "Global Halal Food Checker Active with Fully Dynamic Country Modules."
+
+@app.route("/callback", methods=['POST'])
+def callback():
+    signature = request.headers.get('X-Line-Signature', '')
+    body = request.get_data(as_text=True)
+
+    try:
+        handler.handle(body, signature)
+    except InvalidSignatureError:
+        abort(400)
+
+    return 'OK'
+
+@handler.add(MessageEvent, message=TextMessageContent)
+def handle_text_message(event):
+    global user_languages, user_countries
+    user_id = event.source.user_id
+    raw_text = event.message.text.strip()
+    text = raw_text.lower()
+
+    current_lang = user_languages.get(user_id, "Bengali")
+    current_country = user_countries.get(user_id, "Japan")
+
+    with ApiClient(configuration) as api_client:
+        line_bot_api = MessagingApi(api_client)
+
+        # ১. দেশ নির্বাচন
+        if raw_text.startswith("Country:"):
+            chosen = raw_text.replace("Country:", "").strip().lower()
+            if "china" in chosen:
+                user_countries[user_id] = "China"
+            elif "korea" in chosen or "한국" in chosen:
+                user_countries[user_id] = "Korea"
+            elif "usa" in chosen or "america" in chosen:
+                user_countries[user_id] = "USA"
+            elif "bangladesh" in chosen or "bd" in chosen:
+                user_countries[user_id] = "Bangladesh"
+            else:
+                user_countries[user_id] = "Japan"
+
+            current_country = user_countries[user_id]
+            msg = I18N[current_lang]["country_selected"].format(country=current_country)
+            line_bot_api.reply_message(
+                ReplyMessageRequest(
+                    reply_token=event.reply_token,
+                    messages=[TextMessage(text=msg, quick_reply=get_language_selection_menu())]
+                )
+            )
+            return
+
+        # ২. ভাষা নির্বাচন
+        if raw_text.startswith("Set:"):
+            target = raw_text.replace("Set:", "").strip().lower()
+            if "english" in target:
+                user_languages[user_id] = "English"
+            elif "indonesia" in target:
+                user_languages[user_id] = "Indonesian"
+            elif "japan" in target:
+                user_languages[user_id] = "Japanese"
+            elif "arabic" in target or "عرب" in target:
+                user_languages[user_id] = "Arabic"
+            else:
+                user_languages[user_id] = "Bengali"
+
+            current_lang = user_languages[user_id]
+            msg = I18N[current_lang]["lang_confirm"].format(country=current_country)
+            line_bot_api.reply_message(
+                ReplyMessageRequest(
+                    reply_token=event.reply_token,
+                    messages=[TextMessage(text=msg, quick_reply=get_direct_camera_quick_reply(current_lang))]
+                )
+            )
+            return
+
+        # ৩. দেশ অনুযায়ী পরিবর্তনশীল হারাম তালিকা (Haram Ingredients - Button C)
+        if any(k in text for k in ["haram", "হারাম", "ハラーム"]):
+            country_haram_text = COUNTRY_DETAILS.get(current_country, COUNTRY_DETAILS["Japan"])["haram"]
+            line_bot_api.reply_message(
+                ReplyMessageRequest(reply_token=event.reply_token, messages=[TextMessage(text=country_haram_text)])
+            )
+            return
+
+        # ৪. দেশ অনুযায়ী পরিবর্তনশীল সন্দেহজনক তালিকা (Syubhah - Button D)
+        if any(k in text for k in ["syubhah", "doubtful", "সন্দেহ", "シュブハ", "شبهة"]):
+            country_syubhah_text = COUNTRY_DETAILS.get(current_country, COUNTRY_DETAILS["Japan"])["syubhah"]
+            line_bot_api.reply_message(
+                ReplyMessageRequest(reply_token=event.reply_token, messages=[TextMessage(text=country_syubhah_text)])
+            )
+            return
+
+        # ৫. দেশ অনুযায়ী পরিবর্তনশীল শপিং টিপস (Shopping Tips - Button E)
+        if any(k in text for k in ["tip", "কেনাকাটা", "tips"]):
+            country_tips_text = COUNTRY_DETAILS.get(current_country, COUNTRY_DETAILS["Japan"])["tips"]
+            line_bot_api.reply_message(
+                ReplyMessageRequest(reply_token=event.reply_token, messages=[TextMessage(text=country_tips_text)])
+            )
+            return
+
+        # ৬. দেশ অনুযায়ী পরিবর্তনশীল গাইড ও তথ্য (Info & Guide - Button F)
+        if any(k in text for k in ["info", "guide", "সাহায্য", "তথ্য", "bantuan", "ガイド"]):
+            country_info_text = COUNTRY_DETAILS.get(current_country, COUNTRY_DETAILS["Japan"])["info"]
+            line_bot_api.reply_message(
+                ReplyMessageRequest(reply_token=event.reply_token, messages=[TextMessage(text=country_info_text)])
+            )
+            return
+
+        # দেশ ও ভাষা পরিবর্তনের মেনু (Button B)
+        if any(k in text for k in ["language", "ভাষা", "bahasa", "言語", "لغة", "country", "দেশ", "change language"]):
+            line_bot_api.reply_message(
+                ReplyMessageRequest(
+                    reply_token=event.reply_token,
+                    messages=[
+                        TextMessage(
+                            text=I18N[current_lang]["select_country_first"],
+                            quick_reply=get_country_selection_menu()
+                        )
+                    ]
+                )
+            )
+            return
+
+        # ছবি তোলার অপশন (Button A)
+        if any(k in text for k in ["take a photo", "camera", "ক্যামেরা", "scan", "ছবি", "kamera", "カメラ"]):
+            line_bot_api.reply_message(
+                ReplyMessageRequest(
+                    reply_token=event.reply_token,
+                    messages=[
+                        TextMessage(
+                            text=I18N[current_lang]["cam_prompt"],
+                            quick_reply=get_direct_camera_quick_reply(current_lang)
+                        )
+                    ]
+                )
+            )
+            return
+
+        # ডিফল্ট রিপ্লাই
+        line_bot_api.reply_message(
+            ReplyMessageRequest(
+                reply_token=event.reply_token,
+                messages=[
+                    TextMessage(
+                        text=f"📍 Current Country: {current_country} | 🌐 Language: {current_lang}\n" + I18N[current_lang]["default_prompt"],
+                        quick_reply=get_country_selection_menu()
+                    )
+                ]
+            )
+        )
+
+def call_gemini_vision(prompt, image_b64):
+    candidate_models = [
+        "models/gemini-2.5-flash",
+        "models/gemini-2.5-flash-lite"
+    ]
+
+    payload = {
+        "contents": [{
+            "parts": [
+                {"text": prompt},
+                {"inline_data": {"mime_type": "image/jpeg", "data": image_b64}}
+            ]
+        }],
+        "generationConfig": {
+            "temperature": 0.1,
+            "maxOutputTokens": 600,
+            "response_mime_type": "application/json"
+        }
+    }
+
+    last_error = ""
+    for model_name in candidate_models:
+        url = f"https://generativelanguage.googleapis.com/v1beta/{model_name}:generateContent?key={GEMINI_API_KEY}"
+        for attempt in range(2):
+            try:
+                res = requests.post(url, json=payload, headers={"Content-Type": "application/json"}, timeout=30)
+                if res.status_code == 200:
+                    data = res.json()
+                    return data["candidates"][0]["content"]["parts"][0]["text"].strip()
+                elif res.status_code == 503:
+                    time.sleep(1)
+                    continue
+                else:
+                    last_error = f"API Error ({res.status_code}): {res.text}"
+                    break
+            except Exception as e:
+                last_error = str(e)
+                break
+
+    raise Exception(last_error)
+
+@handler.add(MessageEvent, message=ImageMessageContent)
+def handle_image_message(event):
+    global user_languages, user_countries
+    user_id = event.source.user_id
+    selected_lang = user_languages.get(user_id, "Bengali")
+    selected_country = user_countries.get(user_id, "Japan")
+
+    try:
+        with ApiClient(configuration) as api_client:
+            blob_api = MessagingApiBlob(api_client)
+            raw_bytes = blob_api.get_message_content(event.message.id)
+
+        img = Image.open(io.BytesIO(raw_bytes))
+        img.thumbnail((500, 500))
+        out_buf = io.BytesIO()
+        img.convert('RGB').save(out_buf, format="JPEG", quality=60, optimize=True)
+        image_b64 = base64.b64encode(out_buf.getvalue()).decode("utf-8")
+
+        del raw_bytes, img, out_buf
+        gc.collect()
+
+        country_context = COUNTRY_RULES.get(selected_country, COUNTRY_RULES["Japan"])["haram_prompt"]
+
+        prompt = f"""
+        Act as a professional Global Halal Food Inspector specialized in packaged foods for target country: {selected_country}.
+        
+        Rules & Standards for {selected_country}:
+        {country_context}
+
+        Inspection Procedure:
+        1. Accurately detect and transcribe the ingredient list from the packaging based on the country's label standard.
+        2. Detect all Haram ingredients (pork derivatives, non-halal meat extracts, cooking alcohol/sake/mirin/liaojiu/cheongju, carmine/E120, animal fats).
+        3. Detect any Syubhah/Doubtful components (shortening, emulsifiers E471/E472, unspecified animal gelatin, collagen, enzymes, yeast food) where animal vs plant origin is unstated.
+        4. Strict Verdict Hierarchy: If ANY Haram ingredient is found -> status is 'HARAM'. Else if any Syubhah ingredient is found -> status is 'SYUBHAH'. If all ingredients are verified pure plant/mineral/permissible -> status is 'HALAL'.
+
+        You MUST respond ONLY with a valid JSON matching this schema:
+        {{
+            "status": "HALAL" or "HARAM" or "SYUBHAH",
+            "reason": "Accurate, concise analysis strictly written in {selected_lang}",
+            "items": "Detected specific key ingredients (original text + translation) strictly written in {selected_lang}"
+        }}
+        """
+
+        result_raw = call_gemini_vision(prompt, image_b64)
+        result_json = json.loads(result_raw)
+
+        status = result_json.get("status", "SYUBHAH")
+        reason = result_json.get("reason", "")
+        items = result_json.get("items", "")
+
+        flex_container = create_halal_flex_card(status, reason, items, selected_lang, selected_country)
+        reply_payload = [FlexMessage(alt_text=f"Check Result: {status}", contents=flex_container)]
+
+    except Exception as e:
+        reply_payload = [TextMessage(text=f"Error analyzing image: {str(e)}")]
+
+    with ApiClient(configuration) as api_client:
+        line_bot_api = MessagingApi(api_client)
+        line_bot_api.reply_message(
+            ReplyMessageRequest(
+                reply_token=event.reply_token,
+                messages=reply_payload
+            )
+        )
