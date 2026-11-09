@@ -53,10 +53,10 @@ I18N = {
         "advice_text": "আমাদের এই বটটি একটি ফ্রি এআই টুল। খাদ্য নির্বাচনে ১০০% নির্ভুলতা ও শতভাগ নিরাপদ থাকার জন্য অফিশিয়ালি ভেরিফাইড পেইড অ্যাপ 'Halal Japan' ব্যবহার করার জন্য বিনীত অনুরোধ করা হচ্ছে।",
         "cam_btn": "📷 ক্যামেরা খুলুন",
         "cam_prompt": "নিচের '📷 ক্যামেরা খুলুন' বাটনে চাপ দিয়ে পণ্যের উপাদানের স্পষ্ট ছবি তুলুন:",
-        "lang_confirm": "ভাষা 'বাংলা' সেট করা হয়েছে!",
-        "country_confirm": "নির্বাচিত দেশ: {country}। এখন এই দেশের খাদ্যতালিকা অনুযায়ী স্ক্যান করা হবে।",
+        "lang_confirm": "✅ সেটিংস সম্পন্ন হয়েছে!\n📍 দেশ: {country}\n🌐 ভাষা: বাংলা\n\nএখন খাবারের উপাদানের স্পষ্ট ছবি পাঠান।",
+        "country_selected": "📍 দেশ নির্বাচিত: {country}\nএখন আপনার পছন্দের ভাষা বেছে নিন:",
         "default_prompt": "মেনু থেকে অপশন বেছে নিন অথবা পণ্যের উপাদানের স্পষ্ট ছবি পাঠান।",
-        "select_country_prompt": "ভ্রমণ বা অবস্থানের দেশ নির্বাচন করুন / Select Country:"
+        "select_country_first": "🌍 প্রথমে আপনার অবস্থান বা ভ্রমণের দেশ নির্বাচন করুন:"
     },
     "English": {
         "status_halal": "✅ HALAL",
@@ -70,10 +70,10 @@ I18N = {
         "advice_text": "This bot is a free AI tool. For 100% verified accuracy and safety, we kindly advise using the officially verified paid app 'Halal Japan'.",
         "cam_btn": "📷 Open Camera",
         "cam_prompt": "Tap '📷 Open Camera' below to take a clear picture of the ingredient list:",
-        "lang_confirm": "Language set to English!",
-        "country_confirm": "Target country set to: {country}. Food analysis will follow this region's standards.",
+        "lang_confirm": "✅ Settings configured!\n📍 Country: {country}\n🌐 Language: English\n\nPlease send a clear photo of the ingredient list.",
+        "country_selected": "📍 Country selected: {country}\nNow, please select your language:",
         "default_prompt": "Please choose from the menu or send a photo of the ingredients list.",
-        "select_country_prompt": "Select your country / দেশ বেছে নিন:"
+        "select_country_first": "🌍 Please select your country first:"
     },
     "Indonesian": {
         "status_halal": "✅ HALAL",
@@ -87,10 +87,10 @@ I18N = {
         "advice_text": "Bot ini adalah alat AI gratis. Untuk keakuratan dan keamanan terverifikasi 100%, disarankan menggunakan aplikasi berbayar resmi 'Halal Japan'.",
         "cam_btn": "📷 Buka Kamera",
         "cam_prompt": "Tekan tombol '📷 Buka Kamera' di bawah untuk mengambil foto komposisi:",
-        "lang_confirm": "Bahasa diatur ke Bahasa Indonesia!",
-        "country_confirm": "Negara dipilih: {country}. Pemeriksaan makanan akan disesuaikan dengan negara ini.",
+        "lang_confirm": "✅ Pengaturan selesai!\n📍 Negara: {country}\n🌐 Bahasa: Bahasa Indonesia\n\nSilakan kirim foto komposisi makanan.",
+        "country_selected": "📍 Negara dipilih: {country}\nSekarang, silakan pilih bahasa Anda:",
         "default_prompt": "Silakan pilih menu atau kirim foto daftar komposisi bahan.",
-        "select_country_prompt": "Pilih Negara:"
+        "select_country_first": "🌍 Silakan pilih negara Anda terlebih dahulu:"
     },
     "Japanese": {
         "status_halal": "✅ ハラール (HALAL)",
@@ -104,10 +104,10 @@ I18N = {
         "advice_text": "当ボットは無料のAIツールです。100%安全かつ確実な情報をお求めの場合は、公式認証アプリ『Halal Japan』(有料)のご利用を強くお勧めいたします。",
         "cam_btn": "📷 カメラを起動",
         "cam_prompt": "下の『📷 カメラを起動』ボタンを押して原材料名の写真を撮影してください:",
-        "lang_confirm": "言語を『日本語』に設定しました。",
-        "country_confirm": "対象国を【{country}】に設定しました。この国の基準に基づいて判定します。",
+        "lang_confirm": "✅ 設定が完了しました！\n📍 対象国: {country}\n🌐 言語: 日本語\n\n原材料名の写真を送信してください。",
+        "country_selected": "📍 国を選択しました: {country}\n次に言語を選択してください:",
         "default_prompt": "メニューから選択するか、商品の原材料名（原材料表示）の写真を送信してください。",
-        "select_country_prompt": "対象国を選択してください:"
+        "select_country_first": "🌍 まず対象の国を選択してください:"
     },
     "Arabic": {
         "status_halal": "✅ حلال (HALAL)",
@@ -121,18 +121,16 @@ I18N = {
         "advice_text": "هذا البوت أداة ذكاء اصطناعي مجانية. للحصول على أقصى درجات الدقة والتحقق الموثوق بنسبة 100%، نوصي باستخدام التطبيق المدفوع المعتمد 'Halal Japan'.",
         "cam_btn": "📷 فتح الكاميرا",
         "cam_prompt": "اضغط على زر '📷 فتح الكاميرا' بالأسفل لتصوير قائمة المكونات بوضوح:",
-        "lang_confirm": "تم ضبط اللغة إلى 'العربية'!",
-        "country_confirm": "الدولة المحددة: {country}. سيتم فحص الأطعمة وفق معايير هذا البلد.",
+        "lang_confirm": "✅ تم ضبط الإعدادات بنجاح!\n📍 الدولة: {country}\n🌐 اللغة: العربية\n\nيرجى إرسال صورة واضحة لقائمة المكونات.",
+        "country_selected": "📍 تم تحديد الدولة: {country}\nالآن يرجى اختيار اللغة:",
         "default_prompt": "يرجى الاختيار من القائمة أو إرسال صورة واضحة لقائمة المكونات.",
-        "select_country_prompt": "اختر الدولة المراد فحص أطعمتها:"
+        "select_country_first": "🌍 يرجى اختيار الدولة أولاً:"
     }
 }
 
-# দেশ অনুযায়ী হারাম ও সন্দেহজনক উপাদানের ডাটাবেস
 COUNTRY_RULES = {
     "Japan": {
         "title": "JP HALAL FOOD CHECKER 🇯🇵",
-        "label_name": "原材料名 (Raw Materials)",
         "haram_prompt": """
         TARGET REGION: JAPAN.
         Target label header to locate: 原材料名.
@@ -148,18 +146,17 @@ COUNTRY_RULES = {
     },
     "China": {
         "title": "CN HALAL FOOD CHECKER 🇨🇳",
-        "label_name": "配料 / 配料表 (Ingredients)",
         "haram_prompt": """
         TARGET REGION: MAINLAND CHINA & CHINESE PACKAGED FOODS.
         Target label header to locate: 配料 or 配料表.
         Confirmed HARAM ingredients in China:
         - Pork derivatives: 猪肉, 猪油, 猪脂, 猪皮, 猪血 (blood curd), 猪肉浸膏, 猪肉粉, 培根 (bacon), 火腿 (ham), 猪骨汤, 猪肉精.
         - Non-halal meats & meat broths: 牛肉, 鸡肉, 鸭肉, 鹅肉, 动物油脂, 混合油, 鸡精, 鸡汁, 鸡粉, 浓汤宝, 牛肉膏.
-        - Chinese cooking wine & alcohol: 料酒, 黄酒, 白酒, 花雕酒, 米酒, 烹调酒, 食用酒精, 朗姆酒, 红酒, 葡萄酒, 啤酒, 乙醇. (Pay critical attention: Chinese savory dishes, seasonings, and packaged noodles frequently contain 料酒 or 黄酒).
+        - Chinese cooking wine & alcohol: 料酒, 黄酒, 白酒, 花雕酒, 米酒, 烹调酒, 食用酒精, 朗姆酒, 红酒, 葡萄酒, 啤酒, 乙醇.
         - Blood products: 血旺, 鸭血, 猪血.
         - Non-halal gelatin: 明胶, 动物明胶, 猪皮明胶, 阿胶 (donkey gelatin).
         SYUBHAH ingredients in China:
-        - 起酥油 (shortening), 人造奶油, 人造黄油, 动植物微球油脂, 单双甘油脂肪酸酯, 乳化剂 (emulsifier), 食用香精 (flavoring - check if alcohol solvent), 骨胶原.
+        - 起酥油 (shortening), 人造奶油, 人造黄油, 动植物微球油脂, 单双甘油脂肪酸酯, 乳化剂 (emulsifier), 食用香精, 骨胶原.
         """
     }
 }
@@ -345,7 +342,7 @@ def create_halal_flex_card(status, reason, items_text, lang="Bengali", country="
 
 @app.route("/", methods=['GET'])
 def index():
-    return "JP/CN Multi-Country Halal Food Checker Running."
+    return "JP/CN Multi-Country Multi-Language Halal Food Checker Running."
 
 @app.route("/callback", methods=['POST'])
 def callback():
@@ -372,7 +369,7 @@ def handle_text_message(event):
     with ApiClient(configuration) as api_client:
         line_bot_api = MessagingApi(api_client)
 
-        # দেশ নির্বাচন প্রক্রিয়া
+        # ধাপ ১: ব্যবহারকারী যখন দেশ সিলেক্ট করবে, তখন সাথে সাথে ভাষার তালিকা পপআপ করবে
         if raw_text.startswith("Country:"):
             chosen = raw_text.replace("Country:", "").strip()
             if "china" in chosen.lower():
@@ -381,16 +378,16 @@ def handle_text_message(event):
                 user_countries[user_id] = "Japan"
 
             current_country = user_countries[user_id]
-            msg = I18N[current_lang]["country_confirm"].format(country=current_country)
+            msg = I18N[current_lang]["country_selected"].format(country=current_country)
             line_bot_api.reply_message(
                 ReplyMessageRequest(
                     reply_token=event.reply_token,
-                    messages=[TextMessage(text=msg, quick_reply=get_direct_camera_quick_reply(current_lang))]
+                    messages=[TextMessage(text=msg, quick_reply=get_language_selection_menu())]
                 )
             )
             return
 
-        # ভাষা পরিবর্তন প্রক্রিয়া
+        # ধাপ ২: ব্যবহারকারী যখন ভাষা সিলেক্ট করবে, তখন সেটিংস ফাইনাল হয়ে ক্যামেরা অপশন আসবে
         if raw_text.startswith("Set:"):
             target = raw_text.replace("Set:", "").strip().lower()
             if "english" in target:
@@ -405,7 +402,7 @@ def handle_text_message(event):
                 user_languages[user_id] = "Bengali"
 
             current_lang = user_languages[user_id]
-            msg = I18N[current_lang]["lang_confirm"]
+            msg = I18N[current_lang]["lang_confirm"].format(country=current_country)
             line_bot_api.reply_message(
                 ReplyMessageRequest(
                     reply_token=event.reply_token,
@@ -414,14 +411,14 @@ def handle_text_message(event):
             )
             return
 
-        # কমান্ড ও মেনু অ্যাকশন
-        if any(k in text for k in ["country", "দেশ", "negara", "国", "بلد"]):
+        # রিচ মেনুর 'Change Language' বা 'Language' বাটন চাপলে প্রথমে দেশ নির্বাচনের কুইক রিপ্লাই আসবে
+        if any(k in text for k in ["language", "ভাষা", "bahasa", "言語", "لغة", "country", "দেশ", "change language"]):
             line_bot_api.reply_message(
                 ReplyMessageRequest(
                     reply_token=event.reply_token,
                     messages=[
                         TextMessage(
-                            text=I18N[current_lang]["select_country_prompt"],
+                            text=I18N[current_lang]["select_country_first"],
                             quick_reply=get_country_selection_menu()
                         )
                     ]
@@ -439,25 +436,13 @@ def handle_text_message(event):
                     ]
                 )
             )
-        elif any(k in text for k in ["language", "ভাষা", "bahasa", "言語", "لغة"]):
-            line_bot_api.reply_message(
-                ReplyMessageRequest(
-                    reply_token=event.reply_token,
-                    messages=[
-                        TextMessage(
-                            text="Select Language / ভাষা বেছে নিন / Pilih Bahasa / 言語選択:",
-                            quick_reply=get_language_selection_menu()
-                        )
-                    ]
-                )
-            )
         else:
             line_bot_api.reply_message(
                 ReplyMessageRequest(
                     reply_token=event.reply_token,
                     messages=[
                         TextMessage(
-                            text=f"📍 Current Country: {current_country}\n" + I18N[current_lang]["default_prompt"],
+                            text=f"📍 Country: {current_country} | 🌐 Language: {current_lang}\n" + I18N[current_lang]["default_prompt"],
                             quick_reply=get_country_selection_menu()
                         )
                     ]
