@@ -38,6 +38,7 @@ handler = WebhookHandler(CHANNEL_SECRET)
 user_languages = {}
 user_countries = {}
 user_last_scans = {}
+user_scan_history = {}  # ব্যবহারকারীভিত্তিক স্ক্যান হিস্ট্রি সংরক্ষণ
 
 # বহুভাষিক ইন্টারফেস কনফিগারেশন
 I18N = {
@@ -57,7 +58,12 @@ I18N = {
         "country_selected": "📍 দেশ নির্বাচিত: {country}\nএখন আপনার পছন্দের ভাষা বেছে নিন:",
         "default_prompt": "মেনু থেকে অপশন বেছে নিন অথবা পণ্যের উপাদানের স্পষ্ট ছবি পাঠান।",
         "select_country_first": "🌍 প্রথমে আপনার অবস্থান বা ভ্রমণের দেশ নির্বাচন করুন:",
-        "btn_explain": "❓ উপাদান বিস্তারিত জানাও"
+        "btn_explain": "❓ উপাদান বিস্তারিত জানাও",
+        "btn_history": "📜 হিস্ট্রি তালিকা",
+        "history_title": "📋 আপনার চেক করা খাবারের ইতিহাস (মোট: {count}টি):\n",
+        "history_empty": "আপনার এখনও কোনো খাবারের স্ক্যান ইতিহাস সংরক্ষিত নেই। উপাদানের ছবি পাঠিয়ে চেক করুন।",
+        "history_hint": "\n👉 যে কোনো খাবারের বিস্তারিত কার্ড দেখতে তার নম্বর লিখে পাঠান (যেমন: 1, 2)।",
+        "counter_text": "📊 মোট চেক করা হয়েছে: {total}টি (আইটেম #{item_no})"
     },
     "English": {
         "status_halal": "✅ HALAL",
@@ -75,7 +81,12 @@ I18N = {
         "country_selected": "📍 Country selected: {country}\nNow, please select your language:",
         "default_prompt": "Please choose from the menu or send a photo of the ingredients list.",
         "select_country_first": "🌍 Please select your country first:",
-        "btn_explain": "❓ Explain Ingredients"
+        "btn_explain": "❓ Explain Ingredients",
+        "btn_history": "📜 Scan History",
+        "history_title": "📋 Your Food Check History (Total: {count}):\n",
+        "history_empty": "You have no food scan history yet. Send an ingredient image to start checking.",
+        "history_hint": "\n👉 Type the item number (e.g. 1, 2) to view the full result card again.",
+        "counter_text": "📊 Total Checked: {total} (Item #{item_no})"
     },
     "Indonesian": {
         "status_halal": "✅ HALAL",
@@ -93,7 +104,12 @@ I18N = {
         "country_selected": "📍 Negara dipilih: {country}\nSekarang, silakan pilih bahasa Anda:",
         "default_prompt": "Silakan pilih menu atau kirim foto daftar komposisi bahan.",
         "select_country_first": "🌍 Silakan pilih negara Anda terlebih dahulu:",
-        "btn_explain": "❓ Jelaskan Bahan"
+        "btn_explain": "❓ Jelaskan Bahan",
+        "btn_history": "📜 Riwayat Cek",
+        "history_title": "📋 Riwayat Pemeriksaan Makanan (Total: {count}):\n",
+        "history_empty": "Belum ada riwayat pemeriksaan makanan tersimpan. Kirim foto bahan untuk memulai.",
+        "history_hint": "\n👉 Ketik nomor item (misal: 1, 2) untuk melihat kartu hasil lengkap kembali.",
+        "counter_text": "📊 Total Diperiksa: {total} (Item #{item_no})"
     },
     "Japanese": {
         "status_halal": "✅ ハラール (HALAL)",
@@ -111,7 +127,12 @@ I18N = {
         "country_selected": "📍 国を選択しました: {country}\n次に言語を選択してください:",
         "default_prompt": "メニューから選択するか、商品の原材料名（原材料表示）の写真を送信してください。",
         "select_country_first": "🌍 まず対象の国を選択してください:",
-        "btn_explain": "❓ 成分の詳細解説"
+        "btn_explain": "❓ 成分の詳細解説",
+        "btn_history": "📜 履歴一覧",
+        "history_title": "📋 食品判定履歴 (合計: {count}件):\n",
+        "history_empty": "まだ履歴がありません。原材料の写真を送信して判定を開始してください。",
+        "history_hint": "\n👉 番号（例: 1, 2）を送信すると、詳細結果を再確認できます。",
+        "counter_text": "📊 チェック済み総数: {total}件 (アイテム #{item_no})"
     },
     "Arabic": {
         "status_halal": "✅ حلال (HALAL)",
@@ -129,11 +150,16 @@ I18N = {
         "country_selected": "📍 تم تحديد الدولة: {country}\nالآن يرجى اختيار اللغة:",
         "default_prompt": "يرجى الاختيار من القائمة أو إرسال صورة واضحة لقائمة المكونات.",
         "select_country_first": "🌍 يرجى اختيار الدولة أولاً:",
-        "btn_explain": "❓ تفاصيل المكونات"
+        "btn_explain": "❓ تفاصيل المكونات",
+        "btn_history": "📜 سجل الفحص",
+        "history_title": "📋 سجل فحص الأطعمة الخاص بك (الإجمالي: {count}):\n",
+        "history_empty": "لا يوجد سجل فحص حتى الآن. يرجى إرسال صورة للمكونات للبدء.",
+        "history_hint": "\n👉 أرسل رقم العنصر (مثال: 1, 2) لإعادة عرض بطاقة النتيجة التفصيلية.",
+        "counter_text": "📊 إجمالي العناصر المفحوصة: {total} (عنصر #{item_no})"
     }
 }
 
-# দেশভিত্তিক তথ্য ভাণ্ডার (Haram, Syubhah, Tips, Info, Advice)
+# দেশভিত্তিক তথ্য ভাণ্ডার
 COUNTRY_DETAILS = {
     "Japan": {
         "title": "JP HALAL FOOD CHECKER 🇯🇵",
@@ -318,7 +344,7 @@ COUNTRY_RULES = {
         TARGET REGION: SOUTH KOREA.
         Header: 원재료명.
         - HARAM: 돼지고기, 돈지/라드, 햄, 베이컨, 젤라틴 (돼지), 쇠고기/닭고기 (unless Halal marked), 맛술 (Cooking wine), 청주, 주정 (Alcohol), 양조주, 동물성유지.
-        - SYUBHAH: 쇼트닝, 마가린, 유화제 (E471), 가공유지, 콜라겐, 효소제제.
+        - SYUBHAH: 쇼트닝, 마가린, 유화제 (E471), 가공유지, 콜라ゲン, 효소제제.
         """
     },
     "USA": {
@@ -369,10 +395,11 @@ def get_post_scan_quick_reply(lang="Bengali"):
     lang_data = I18N.get(lang, I18N["Bengali"])
     return QuickReply(items=[
         QuickReplyItem(action=MessageAction(label=lang_data["btn_explain"], text="explain_last_scan")),
+        QuickReplyItem(action=MessageAction(label=lang_data["btn_history"], text="show_history")),
         QuickReplyItem(action=CameraAction(label=lang_data["cam_btn"]))
     ])
 
-def create_halal_flex_card(product_name, company_name, status, reason, items_text, alternatives_text, lang="Bengali", country="Japan"):
+def create_halal_flex_card(product_name, company_name, status, reason, items_text, alternatives_text, lang="Bengali", country="Japan", item_no=None, total_count=None):
     lang_data = I18N.get(lang, I18N["Bengali"])
     country_info = COUNTRY_RULES.get(country, COUNTRY_RULES["Japan"])
     country_header = country_info["title"]
@@ -398,6 +425,24 @@ def create_halal_flex_card(product_name, company_name, status, reason, items_tex
 
     body_contents = []
 
+    # কাউন্টার তথ্য (যদি থাকে)
+    if item_no is not None and total_count is not None:
+        counter_label = lang_data["counter_text"].format(total=total_count, item_no=item_no)
+        body_contents.append({
+            "type": "box",
+            "layout": "vertical",
+            "paddingBottom": "6px",
+            "contents": [
+                {
+                    "type": "text",
+                    "text": counter_label,
+                    "weight": "bold",
+                    "size": "xxs",
+                    "color": "#757575"
+                }
+            ]
+        })
+
     # ১. পণ্যের নাম ও প্রস্তুতকারক কোম্পানির বক্স
     if product_name or company_name:
         prod_display = product_name if product_name else "খাদ্য পণ্য (Food Item)"
@@ -405,7 +450,6 @@ def create_halal_flex_card(product_name, company_name, status, reason, items_tex
         body_contents.append({
             "type": "box",
             "layout": "vertical",
-            "margin": "none",
             "paddingBottom": "10px",
             "contents": [
                 {
@@ -593,7 +637,7 @@ def create_halal_flex_card(product_name, company_name, status, reason, items_tex
 
 @app.route("/", methods=['GET'])
 def index():
-    return "Global Halal Food Checker Active with Complete Product & Manufacturer Engine."
+    return "Global Halal Food Checker with History & Counter Active."
 
 @app.route("/callback", methods=['POST'])
 def callback():
@@ -609,18 +653,77 @@ def callback():
 
 @handler.add(MessageEvent, message=TextMessageContent)
 def handle_text_message(event):
-    global user_languages, user_countries, user_last_scans
+    global user_languages, user_countries, user_last_scans, user_scan_history
     user_id = event.source.user_id
     raw_text = event.message.text.strip()
     text = raw_text.lower()
 
     current_lang = user_languages.get(user_id, "Bengali")
     current_country = user_countries.get(user_id, "Japan")
+    history_list = user_scan_history.get(user_id, [])
 
     with ApiClient(configuration) as api_client:
         line_bot_api = MessagingApi(api_client)
 
-        # মাইক্রো-চ্যাট: শেষ স্ক্যানের পণ্যের বিবরণ ও উপাদানের ব্যাখ্যা
+        # ১. হিস্ট্রি তালিকা প্রদর্শন (Show History)
+        if text in ["show_history", "history", "হিস্ট্রি", "ইতিহাস", "履歴"]:
+            if not history_list:
+                line_bot_api.reply_message(
+                    ReplyMessageRequest(
+                        reply_token=event.reply_token,
+                        messages=[TextMessage(text=I18N[current_lang]["history_empty"])]
+                    )
+                )
+                return
+
+            response_msg = I18N[current_lang]["history_title"].format(count=len(history_list))
+            for idx, item in enumerate(reversed(history_list[-10:]), 1):
+                actual_idx = len(history_list) - idx + 1
+                prod = item.get("product_name", "খাদ্য পণ্য")
+                status = item.get("status", "VERIFY")
+                response_msg += f"{actual_idx}. 📦 {prod} [{status}]\n"
+
+            response_msg += I18N[current_lang]["history_hint"]
+            line_bot_api.reply_message(
+                ReplyMessageRequest(
+                    reply_token=event.reply_token,
+                    messages=[TextMessage(text=response_msg)]
+                )
+            )
+            return
+
+        # ২. নির্দিষ্ট নম্বরের আইটেম পুনরায় বিস্তারিত দেখা (Recall by index: 1, 2, 3...)
+        if raw_text.isdigit():
+            target_idx = int(raw_text)
+            if 1 <= target_idx <= len(history_list):
+                saved_item = history_list[target_idx - 1]
+                flex_container = create_halal_flex_card(
+                    saved_item.get("product_name", ""),
+                    saved_item.get("company_name", ""),
+                    saved_item.get("status", "SYUBHAH"),
+                    saved_item.get("reason", ""),
+                    saved_item.get("items", ""),
+                    saved_item.get("alternatives", ""),
+                    current_lang,
+                    saved_item.get("country", current_country),
+                    item_no=target_idx,
+                    total_count=len(history_list)
+                )
+                line_bot_api.reply_message(
+                    ReplyMessageRequest(
+                        reply_token=event.reply_token,
+                        messages=[
+                            FlexMessage(
+                                alt_text=f"History #{target_idx}: {saved_item.get('status')}",
+                                contents=flex_container,
+                                quick_reply=get_post_scan_quick_reply(current_lang)
+                            )
+                        ]
+                    )
+                )
+                return
+
+        # ৩. মাইক্রো-চ্যাট: শেষ স্ক্যানের উপাদানের ব্যাখ্যা
         if text == "explain_last_scan" or "বিস্তারিত" in text or "explain" in text:
             last_scan = user_last_scans.get(user_id)
             if last_scan:
@@ -645,7 +748,7 @@ def handle_text_message(event):
                 )
             return
 
-        # ১. দেশ নির্বাচন
+        # ৪. দেশ নির্বাচন
         if raw_text.startswith("Country:"):
             chosen = raw_text.replace("Country:", "").strip().lower()
             if "china" in chosen:
@@ -669,7 +772,7 @@ def handle_text_message(event):
             )
             return
 
-        # ২. ভাষা নির্বাচন
+        # ৫. ভাষা নির্বাচন
         if raw_text.startswith("Set:"):
             target = raw_text.replace("Set:", "").strip().lower()
             if "english" in target:
@@ -755,7 +858,7 @@ def handle_text_message(event):
             )
             return
 
-        # ডিফল্ট রিপ্লাই
+        # ডিফল্ট মেসেজ
         line_bot_api.reply_message(
             ReplyMessageRequest(
                 reply_token=event.reply_token,
@@ -812,7 +915,7 @@ def call_gemini_vision(prompt, image_b64):
 
 @handler.add(MessageEvent, message=ImageMessageContent)
 def handle_image_message(event):
-    global user_languages, user_countries, user_last_scans
+    global user_languages, user_countries, user_last_scans, user_scan_history
     user_id = event.source.user_id
     selected_lang = user_languages.get(user_id, "Bengali")
     selected_country = user_countries.get(user_id, "Japan")
@@ -868,17 +971,29 @@ def handle_image_message(event):
         items = result_json.get("items", "")
         alternatives = result_json.get("alternatives", "")
 
-        user_last_scans[user_id] = {
+        # স্ক্যান হিস্ট্রিতে ডাটা যোগ করা
+        if user_id not in user_scan_history:
+            user_scan_history[user_id] = []
+
+        scan_record = {
             "product_name": product_name,
             "company_name": company_name,
             "status": status,
             "reason": reason,
             "items": items,
-            "alternatives": alternatives
+            "alternatives": alternatives,
+            "country": selected_country
         }
+        user_scan_history[user_id].append(scan_record)
+
+        total_scans = len(user_scan_history[user_id])
+        current_item_no = total_scans
+
+        user_last_scans[user_id] = scan_record
 
         flex_container = create_halal_flex_card(
-            product_name, company_name, status, reason, items, alternatives, selected_lang, selected_country
+            product_name, company_name, status, reason, items, alternatives, 
+            selected_lang, selected_country, item_no=current_item_no, total_count=total_scans
         )
         reply_payload = [
             FlexMessage(
