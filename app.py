@@ -372,7 +372,7 @@ def get_post_scan_quick_reply(lang="Bengali"):
         QuickReplyItem(action=CameraAction(label=lang_data["cam_btn"]))
     ])
 
-def create_halal_flex_card(status, reason, items_text, alternatives_text, lang="Bengali", country="Japan"):
+def create_halal_flex_card(product_name, company_name, status, reason, items_text, alternatives_text, lang="Bengali", country="Japan"):
     lang_data = I18N.get(lang, I18N["Bengali"])
     country_info = COUNTRY_RULES.get(country, COUNTRY_RULES["Japan"])
     country_header = country_info["title"]
@@ -396,55 +396,80 @@ def create_halal_flex_card(status, reason, items_text, alternatives_text, lang="
         badge_bg = "#FFF3E0"
         badge_color = "#E65100"
 
-    body_contents = [
-        {
+    body_contents = []
+
+    # ১. পণ্যের নাম ও প্রস্তুতকারক কোম্পানির বক্স
+    if product_name or company_name:
+        prod_display = product_name if product_name else "খাদ্য পণ্য (Food Item)"
+        comp_display = f" | {company_name}" if company_name else ""
+        body_contents.append({
             "type": "box",
             "layout": "vertical",
-            "backgroundColor": badge_bg,
-            "cornerRadius": "8px",
-            "paddingAll": "12px",
+            "margin": "none",
+            "paddingBottom": "10px",
             "contents": [
                 {
                     "type": "text",
-                    "text": lang_data["label_reason"],
+                    "text": f"📦 {prod_display}{comp_display}",
                     "weight": "bold",
-                    "size": "xs",
-                    "color": badge_color
-                },
-                {
-                    "type": "text",
-                    "text": reason if reason else "Completed",
-                    "size": "sm",
-                    "color": "#333333",
-                    "wrap": True,
-                    "margin": "xs"
-                }
-            ]
-        },
-        {
-            "type": "box",
-            "layout": "vertical",
-            "margin": "md",
-            "contents": [
-                {
-                    "type": "text",
-                    "text": lang_data["label_items"],
-                    "weight": "bold",
-                    "size": "xs",
-                    "color": "#666666"
-                },
-                {
-                    "type": "text",
-                    "text": items_text if items_text else "-",
                     "size": "sm",
                     "color": "#111111",
-                    "wrap": True,
-                    "margin": "xs"
+                    "wrap": True
                 }
             ]
-        }
-    ]
+        })
 
+    # ২. স্ট্যাটাস ও কারণ
+    body_contents.append({
+        "type": "box",
+        "layout": "vertical",
+        "backgroundColor": badge_bg,
+        "cornerRadius": "8px",
+        "paddingAll": "12px",
+        "contents": [
+            {
+                "type": "text",
+                "text": lang_data["label_reason"],
+                "weight": "bold",
+                "size": "xs",
+                "color": badge_color
+            },
+            {
+                "type": "text",
+                "text": reason if reason else "Completed",
+                "size": "sm",
+                "color": "#333333",
+                "wrap": True,
+                "margin": "xs"
+            }
+        ]
+    })
+
+    # ৩. শনাক্তকৃত উপাদানসমূহ
+    body_contents.append({
+        "type": "box",
+        "layout": "vertical",
+        "margin": "md",
+        "contents": [
+            {
+                "type": "text",
+                "text": lang_data["label_items"],
+                "weight": "bold",
+                "size": "xs",
+                "color": "#666666"
+            },
+            {
+                "type": "text",
+                "text": items_text if items_text else "-",
+                "size": "sm",
+                "color": "#111111",
+                "wrap": True,
+                "margin": "xs"
+            }
+        ]
+    })
+
+    # ৪. হালাল বিকল্প সাজেশন (হারাম বা সন্দেহজনক হলে)
     if alternatives_text and alternatives_text.strip():
         body_contents.append({
             "type": "box",
@@ -472,6 +497,7 @@ def create_halal_flex_card(status, reason, items_text, alternatives_text, lang="
             ]
         })
 
+    # ৫. হাদিস ও অফিশিয়াল অ্যাডভাইস বক্স
     body_contents.extend([
         {
             "type": "separator",
@@ -567,7 +593,7 @@ def create_halal_flex_card(status, reason, items_text, alternatives_text, lang="
 
 @app.route("/", methods=['GET'])
 def index():
-    return "Global Halal Food Checker Active with Gemini 3.5 Engine."
+    return "Global Halal Food Checker Active with Complete Product & Manufacturer Engine."
 
 @app.route("/callback", methods=['POST'])
 def callback():
@@ -594,16 +620,19 @@ def handle_text_message(event):
     with ApiClient(configuration) as api_client:
         line_bot_api = MessagingApi(api_client)
 
-        # মাইক্রো-চ্যাট: উপাদানের ব্যাখ্যা
+        # মাইক্রো-চ্যাট: শেষ স্ক্যানের পণ্যের বিবরণ ও উপাদানের ব্যাখ্যা
         if text == "explain_last_scan" or "বিস্তারিত" in text or "explain" in text:
             last_scan = user_last_scans.get(user_id)
             if last_scan:
-                explanation = f"🔍 [বিশ্লেষণ - {last_scan.get('status')}]:\n\n"
+                prod = last_scan.get('product_name', 'অজ্ঞাত পণ্য')
+                comp = last_scan.get('company_name', 'অজ্ঞাত ব্র্যান্ড')
+                explanation = f"🔍 [বিশ্লেষণ - {prod} ({comp})]:\n\n"
+                explanation += f"📊 স্ট্যাটাস: {last_scan.get('status')}\n\n"
                 explanation += f"📌 কারণ: {last_scan.get('reason')}\n\n"
                 explanation += f"🏷️ উপাদানসমূহ: {last_scan.get('items')}\n\n"
                 if last_scan.get('alternatives'):
                     explanation += f"💡 বিকল্প: {last_scan.get('alternatives')}\n\n"
-                explanation += "কোনো নির্দিষ্ট কাঞ্জি বা কোড সম্পর্কে জানতে প্রশ্ন লিখে পাঠাতে পারেন।"
+                explanation += "কোনো নির্দিষ্ট কাঞ্জি বা কোড সম্পর্কে বিস্তারিত জানতে প্রশ্ন লিখে পাঠাতে পারেন।"
                 line_bot_api.reply_message(
                     ReplyMessageRequest(reply_token=event.reply_token, messages=[TextMessage(text=explanation)])
                 )
@@ -616,7 +645,7 @@ def handle_text_message(event):
                 )
             return
 
-        # দেশ নির্বাচন
+        # ১. দেশ নির্বাচন
         if raw_text.startswith("Country:"):
             chosen = raw_text.replace("Country:", "").strip().lower()
             if "china" in chosen:
@@ -640,7 +669,7 @@ def handle_text_message(event):
             )
             return
 
-        # ভাষা নির্বাচন
+        # ২. ভাষা নির্বাচন
         if raw_text.startswith("Set:"):
             target = raw_text.replace("Set:", "").strip().lower()
             if "english" in target:
@@ -664,7 +693,7 @@ def handle_text_message(event):
             )
             return
 
-        # হারাম উপাদান বাটন (C)
+        # রিচ মেনু বাটন C: হারাম উপাদান
         if any(k in text for k in ["haram", "হারাম", "ハラーム"]):
             country_haram_text = COUNTRY_DETAILS.get(current_country, COUNTRY_DETAILS["Japan"])["haram"]
             line_bot_api.reply_message(
@@ -672,7 +701,7 @@ def handle_text_message(event):
             )
             return
 
-        # সন্দেহজনক উপাদান বাটন (D)
+        # রিচ মেনু বাটন D: সন্দেহজনক উপাদান
         if any(k in text for k in ["syubhah", "doubtful", "সন্দেহ", "シュブハ", "شبهة"]):
             country_syubhah_text = COUNTRY_DETAILS.get(current_country, COUNTRY_DETAILS["Japan"])["syubhah"]
             line_bot_api.reply_message(
@@ -680,7 +709,7 @@ def handle_text_message(event):
             )
             return
 
-        # শপিং টিপস বাটন (E)
+        # রিচ মেনু বাটন E: শপিং টিপস
         if any(k in text for k in ["tip", "কেনাকাটা", "tips"]):
             country_tips_text = COUNTRY_DETAILS.get(current_country, COUNTRY_DETAILS["Japan"])["tips"]
             line_bot_api.reply_message(
@@ -688,7 +717,7 @@ def handle_text_message(event):
             )
             return
 
-        # গাইড ও তথ্য বাটন (F)
+        # রিচ মেনু বাটন F: গাইড ও তথ্য
         if any(k in text for k in ["info", "guide", "সাহায্য", "তথ্য", "bantuan", "ガイド"]):
             country_info_text = COUNTRY_DETAILS.get(current_country, COUNTRY_DETAILS["Japan"])["info"]
             line_bot_api.reply_message(
@@ -696,7 +725,7 @@ def handle_text_message(event):
             )
             return
 
-        # দেশ ও ভাষা বাটন (B)
+        # রিচ মেনু বাটন B: দেশ ও ভাষা
         if any(k in text for k in ["language", "ভাষা", "bahasa", "言語", "لغة", "country", "দেশ", "change language"]):
             line_bot_api.reply_message(
                 ReplyMessageRequest(
@@ -711,7 +740,7 @@ def handle_text_message(event):
             )
             return
 
-        # ক্যামেরা বাটন (A)
+        # রিচ মেনু বাটন A: ছবি তোলা
         if any(k in text for k in ["take a photo", "camera", "ক্যামেরা", "scan", "ছবি", "kamera", "カメラ"]):
             line_bot_api.reply_message(
                 ReplyMessageRequest(
@@ -726,20 +755,20 @@ def handle_text_message(event):
             )
             return
 
-        # ডিফল্ট মেসেজ
+        # ডিফল্ট রিপ্লাই
         line_bot_api.reply_message(
             ReplyMessageRequest(
                 reply_token=event.reply_token,
                 messages=[
                     TextMessage(
-                        text=f"📍 Current Country: {current_country} | 🌐 Language: {current_lang}\n" + I18N[current_lang]["default_prompt"],
+                        text=f"📍 Country: {current_country} | 🌐 Language: {current_lang}\n" + I18N[current_lang]["default_prompt"],
                         quick_reply=get_country_selection_menu()
                     )
                 ]
             )
         )
 
-# আপডেট করা এআই ইঞ্জিন (Gemini 3.5 & 3.8)
+# আপডেট করা এআই ইঞ্জিন
 def call_gemini_vision(prompt, image_b64):
     candidate_models = [
         "models/gemini-3.5-flash-lite",
@@ -755,7 +784,7 @@ def call_gemini_vision(prompt, image_b64):
         }],
         "generationConfig": {
             "temperature": 0.1,
-            "maxOutputTokens": 700,
+            "maxOutputTokens": 750,
             "response_mime_type": "application/json"
         }
     }
@@ -811,14 +840,17 @@ def handle_image_message(event):
         {country_context}
 
         Inspection Procedure:
-        1. Accurately detect and transcribe ingredients or barcode information from the packaging.
-        2. Detect all Haram ingredients (pork derivatives, non-halal meat extracts, cooking alcohol/sake/mirin/liaojiu/cheongju, carmine/E120, animal fats).
-        3. Detect any Syubhah/Doubtful components (shortening, emulsifiers E471/E472, unspecified animal gelatin, collagen, enzymes, yeast food).
-        4. Verdict Hierarchy: If ANY Haram found -> 'HARAM'. Else if ANY Syubhah found -> 'SYUBHAH'. Otherwise -> 'HALAL'.
-        5. Smart Halal Alternative: If status is 'HARAM' or 'SYUBHAH', suggest 1-2 widely available Halal alternative brands/items in {selected_country} (e.g. halal certified potato chips, halal soy sauce, or plant-based cookies). If HALAL, leave 'alternatives' empty.
+        1. Identify the Product Name and Manufacturer / Brand name from packaging or barcode context.
+        2. Accurately detect and transcribe ingredients or barcode information from the packaging.
+        3. Detect all Haram ingredients (pork derivatives, non-halal meat extracts, cooking alcohol/sake/mirin/liaojiu/cheongju, carmine/E120, animal fats).
+        4. Detect any Syubhah/Doubtful components (shortening, emulsifiers E471/E472, unspecified animal gelatin, collagen, enzymes, yeast food).
+        5. Verdict Hierarchy: If ANY Haram found -> 'HARAM'. Else if ANY Syubhah found -> 'SYUBHAH'. Otherwise -> 'HALAL'.
+        6. Smart Halal Alternative: If status is 'HARAM' or 'SYUBHAH', suggest 1-2 widely available Halal alternative brands/items in {selected_country}. If HALAL, leave 'alternatives' empty.
 
         You MUST respond ONLY with a valid JSON matching this schema:
         {{
+            "product_name": "Identified product name (with English/Bengali translation)",
+            "company_name": "Manufacturer/Brand name (e.g. Meiji, Lotte, Calbee, Nongshim, Nestlé)",
             "status": "HALAL" or "HARAM" or "SYUBHAH",
             "reason": "Accurate, concise analysis strictly written in {selected_lang}",
             "items": "Detected specific key ingredients (original text + translation) strictly written in {selected_lang}",
@@ -829,19 +861,25 @@ def handle_image_message(event):
         result_raw = call_gemini_vision(prompt, image_b64)
         result_json = json.loads(result_raw)
 
+        product_name = result_json.get("product_name", "")
+        company_name = result_json.get("company_name", "")
         status = result_json.get("status", "SYUBHAH")
         reason = result_json.get("reason", "")
         items = result_json.get("items", "")
         alternatives = result_json.get("alternatives", "")
 
         user_last_scans[user_id] = {
+            "product_name": product_name,
+            "company_name": company_name,
             "status": status,
             "reason": reason,
             "items": items,
             "alternatives": alternatives
         }
 
-        flex_container = create_halal_flex_card(status, reason, items, alternatives, selected_lang, selected_country)
+        flex_container = create_halal_flex_card(
+            product_name, company_name, status, reason, items, alternatives, selected_lang, selected_country
+        )
         reply_payload = [
             FlexMessage(
                 alt_text=f"Check Result: {status}",
