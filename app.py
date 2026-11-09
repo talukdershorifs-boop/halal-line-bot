@@ -133,10 +133,9 @@ COUNTRY_RULES = {
         "haram_prompt": """
         TARGET REGION: JAPAN.
         Target label header to locate: 原材料名.
-        Key Halal/Haram/Syubhah rules:
         - HARAM: 豚肉 (Pork), 豚脂/ラード (Lard), 豚骨 (Pork bone), ポークエキス, 豚ゼラチン, ハム, ベーコン, 牛肉/牛脂/鶏肉 (unless Halal certified), 動物性油脂, 混合油脂, コンソメ, ブイヨン, アルコール (Alcohol), 洋酒, 酒精, 酒, 料理酒, 清酒, 味醂 (Mirin), 発酵調味料 (with alcohol).
-        - SYUBHAH (Avoid unless origin is explicitly plant-based '植物性'): ショートニング (Shortening), マーガリン (Margarine), ファットスプレッド, 乳化剤 (Emulsifier / E471/E472), 加工油脂, 食用油脂, コラーゲン, ゼラチン (Gelatin - unless fish-derived), アミノ酸等 (if animal origin unspecified), 酵素 (Enzymes), イーストフード, 骨炭, メンチカツ, 肉エキス.
-        - HALAL: 植物油脂, 大豆油, 菜種油, 小麦粉, 砂糖, 食塩, 植物性タンパク, 野菜エキス, 海藻エキス, 魚介エキス (non-alcoholic/fish).
+        - SYUBHAH (Avoid unless origin is plant-based '植物性'): ショートニング (Shortening), マーガリン (Margarine), ファットスプレッド, 乳化剤 (Emulsifier / E471/E472), 加工油脂, 食用油脂, コラーゲン, ゼラチン (Gelatin - unless fish-derived), アミノ酸等 (if animal origin unspecified), 酵素 (Enzymes), イーストフード, 骨炭, メンチカツ, 肉エキス.
+        - HALAL: 植物油脂, 大豆油, 菜種油, 小麦粉, 砂糖, 食塩, 植物性タンパク, 野菜エキス, 海藻エキス, 魚介エキス.
         """
     },
     "China": {
@@ -147,13 +146,37 @@ COUNTRY_RULES = {
         - HARAM: 猪肉 (Pork), 猪油 (Lard), 猪脂, 猪皮, 猪血 (blood curd), 猪肉浸膏, 培根 (bacon), 火腿 (ham), 动物油脂, 混合油, 鸡精, 鸡汁, 浓汤宝, 料酒 (Chinese cooking wine), 黄酒, 白酒, 花雕酒, 米酒, 烹调酒, 食用酒精, 朗姆酒, 啤酒, 乙醇, 明胶 (non-halal gelatin), 阿胶 (donkey gelatin), 鸭血, 血旺.
         - SYUBHAH: 起酥油 (shortening), 人造奶油, 人造黄油, 乳化剂 (emulsifier), 食用香精, 骨胶原, 单双甘油脂肪酸酯, 酶制剂.
         """
+    },
+    "Bangladesh": {
+        "title": "BD HALAL FOOD CHECKER 🇧🇩",
+        "haram_prompt": """
+        TARGET REGION: BANGLADESH (LOCAL & IMPORTED FOODS).
+        Target label header to locate: উপাদান, উপাদানসমূহ, Ingredients.
+        Key Halal/Haram/Syubhah rules in Bangladesh context:
+        - HARAM:
+          * Pork, Bacon, Ham, Lard, Pork gelatin (শুয়োরের মাংস, চর্বি, লার্ড, পর্ক জেলাটিন).
+          * Animal gelatin / Gelatin without explicit Halal or Bovine/Fish confirmation.
+          * Carmine / Cochineal (E120) red dye derived from insects.
+          * Alcohol, Spirit, Rum, Wine extract used in desserts or flavoring.
+          * Non-dhabiha imported meat extracts (poultry or beef extracts from non-halal origins).
+        - SYUBHAH (Doubtful / Check Source):
+          * Emulsifiers (ইমালসিফায়ার: E471, E472a-f, E481) without 'Plant origin' (উদ্ভিজ্জ) label.
+          * Shortening (শর্টনিং) and Margarine (মার্জারিন) in bakery items if animal fat source is possible.
+          * Rennet (রেনেট) in imported cheese (animal vs microbial).
+          * Whey powder (হুই পাউডার) if prepared with animal rennet.
+          * E441 (Gelatin), E920 (L-cysteine - often derived from feathers/hair).
+          * Artificial flavorings with alcohol carriers.
+        - HALAL:
+          * Pure vegetable oils (সয়াবিন তেল, সরিষার তেল, পাম তেল), rice, flour, pulses, spices, BSTI Halal certified items.
+        """
     }
 }
 
 def get_country_selection_menu():
     return QuickReply(items=[
         QuickReplyItem(action=MessageAction(label="🇯🇵 Japan (日本)", text="Country: Japan")),
-        QuickReplyItem(action=MessageAction(label="🇨🇳 China (中国)", text="Country: China"))
+        QuickReplyItem(action=MessageAction(label="🇨🇳 China (中国)", text="Country: China")),
+        QuickReplyItem(action=MessageAction(label="🇧🇩 Bangladesh", text="Country: Bangladesh"))
     ])
 
 def get_language_selection_menu():
@@ -331,7 +354,7 @@ def create_halal_flex_card(status, reason, items_text, lang="Bengali", country="
 
 @app.route("/", methods=['GET'])
 def index():
-    return "JP/CN Multi-Country Halal Food Checker with 700+ Database Engine Running."
+    return "Multi-Country (JP, CN, BD) Halal Food Checker Running."
 
 @app.route("/callback", methods=['POST'])
 def callback():
@@ -358,10 +381,13 @@ def handle_text_message(event):
     with ApiClient(configuration) as api_client:
         line_bot_api = MessagingApi(api_client)
 
+        # ধাপ ১: দেশ নির্বাচন
         if raw_text.startswith("Country:"):
-            chosen = raw_text.replace("Country:", "").strip()
-            if "china" in chosen.lower():
+            chosen = raw_text.replace("Country:", "").strip().lower()
+            if "china" in chosen:
                 user_countries[user_id] = "China"
+            elif "bangladesh" in chosen or "bd" in chosen or "বাংলাদেশ" in chosen:
+                user_countries[user_id] = "Bangladesh"
             else:
                 user_countries[user_id] = "Japan"
 
@@ -375,6 +401,7 @@ def handle_text_message(event):
             )
             return
 
+        # ধাপ ২: ভাষা নির্বাচন
         if raw_text.startswith("Set:"):
             target = raw_text.replace("Set:", "").strip().lower()
             if "english" in target:
@@ -398,6 +425,7 @@ def handle_text_message(event):
             )
             return
 
+        # রিচ মেনুর বাটন হ্যান্ডলিং
         if any(k in text for k in ["language", "ভাষা", "bahasa", "言語", "لغة", "country", "দেশ", "change language"]):
             line_bot_api.reply_message(
                 ReplyMessageRequest(
@@ -500,23 +528,22 @@ def handle_image_message(event):
         country_context = COUNTRY_RULES.get(selected_country, COUNTRY_RULES["Japan"])["haram_prompt"]
 
         prompt = f"""
-        Act as Halal Food Inspector specialized in East Asian packaged products with authoritative knowledge of over 700 Japanese/Chinese food additives, enzymes, E-numbers, and animal derivatives.
-        Target Country: {selected_country}
+        Act as Halal Food Inspector specialized in packaged products for the selected target country: {selected_country}.
         
         Rules and Database Reference:
         {country_context}
 
         Inspection Procedure:
-        1. Accurately transcribe all words in the ingredient section (原材料名 for Japan, 配料表 for China).
-        2. Identify any Haram components (pork derivatives, non-halal meat extracts, cooking alcohol/sake/mirin/liaojiu, animal fats).
-        3. Identify any Syubhah/Doubtful components (shortening, emulsifiers E471/E472, unspecified animal gelatin, collagen, enzymes, yeast food) where animal vs plant origin is unstated.
+        1. Accurately transcribe all words in the ingredient section (原材料名 for Japan, 配料/配料表 for China, উপাদান/Ingredients for Bangladesh).
+        2. Detect all Haram ingredients (pork derivatives, non-halal meat extracts, cooking alcohol/sake/mirin/liaojiu, carmine/E120, animal fats).
+        3. Detect any Syubhah/Doubtful components (shortening, emulsifiers E471/E472, unspecified animal gelatin, collagen, enzymes, yeast food) where animal vs plant origin is unstated.
         4. Strict Verdict Hierarchy: If ANY Haram ingredient is found -> status is 'HARAM'. Else if any Syubhah ingredient is found -> status is 'SYUBHAH'. If all ingredients are verified pure plant/mineral/permissible -> status is 'HALAL'.
 
         You MUST respond ONLY with a valid JSON matching this schema:
         {{
             "status": "HALAL" or "HARAM" or "SYUBHAH",
             "reason": "Accurate, concise analysis strictly written in {selected_lang}",
-            "items": "Detected specific key ingredients (original Kanji/Hanzi + translation) strictly written in {selected_lang}"
+            "items": "Detected specific key ingredients (original text + translation) strictly written in {selected_lang}"
         }}
         """
 
