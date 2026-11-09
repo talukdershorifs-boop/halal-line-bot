@@ -49,7 +49,6 @@ I18N = {
         "label_hadith_title": "📜 হাদিসের আলোকে সতর্কতা:",
         "hadith_text": "রাসূলুল্লাহ ﷺ বলেছেন: 'হালালও স্পষ্ট এবং হারামও স্পষ্ট। আর এ দুয়ের মাঝে রয়েছে বহু সন্দেহজনক বিষয়... যে ব্যক্তি সন্দেহজনক বিষয় থেকে নিজেকে বাঁচিয়ে রাখল, সে তার দ্বীন ও সম্মান রক্ষা করল।' [সহিহ বুখারি: ৫২, সহিহ মুসলিম: ১৫৯৯]",
         "label_advice_title": "💡 গুরুত্বপূর্ণ পরামর্শ:",
-        "advice_text": "আমাদের এই বটটি একটি ফ্রি এআই টুল। খাদ্য নির্বাচনে ১০০% নির্ভুলতা ও শতভাগ নিরাপদ থাকার জন্য অফিশিয়ালি ভেরিফাইড পেইড অ্যাপ 'Halal Japan' ব্যবহার করার জন্য বিনীত অনুরোধ করা হচ্ছে।",
         "cam_btn": "📷 ক্যামেরা খুলুন",
         "cam_prompt": "নিচের '📷 ক্যামেরা খুলুন' বাটনে চাপ দিয়ে পণ্যের উপাদানের স্পষ্ট ছবি তুলুন:",
         "lang_confirm": "✅ সেটিংস সম্পন্ন হয়েছে!\n📍 দেশ: {country}\n🌐 ভাষা: বাংলা\n\nএখন খাবারের উপাদানের স্পষ্ট ছবি পাঠান।",
@@ -66,7 +65,6 @@ I18N = {
         "label_hadith_title": "📜 Warning from Hadith:",
         "hadith_text": "The Prophet ﷺ said: 'What is lawful is clear and what is unlawful is clear, and between them are matters that are doubtful... So he who guards against doubtful matters clears himself in regard to his religion and his honor.' [Sahih al-Bukhari: 52, Sahih Muslim: 1599]",
         "label_advice_title": "💡 Important Recommendation:",
-        "advice_text": "This bot is a free AI tool. For 100% verified accuracy and safety, we kindly advise using the officially verified paid app 'Halal Japan'.",
         "cam_btn": "📷 Open Camera",
         "cam_prompt": "Tap '📷 Open Camera' below to take a clear picture of the ingredient list:",
         "lang_confirm": "✅ Settings configured!\n📍 Country: {country}\n🌐 Language: English\n\nPlease send a clear photo of the ingredient list.",
@@ -83,7 +81,6 @@ I18N = {
         "label_hadith_title": "📜 Peringatan Hadits:",
         "hadith_text": "Rasulullah ﷺ bersabda: 'Sesungguhnya yang halal itu jelas dan yang haram itu jelas, dan di antara keduanya ada perkara-perkara syubhat... Barangsiapa menjauhi syubhat, maka ia telah membersihkan agama dan kehormatannya.' [HR. Bukhari: 52, Muslim: 1599]",
         "label_advice_title": "💡 Rekomendasi Penting:",
-        "advice_text": "Bot ini adalah alat AI gratis. Untuk keakuratan dan keamanan terverifikasi 100%, disarankan menggunakan aplikasi berbayar resmi 'Halal Japan'.",
         "cam_btn": "📷 Buka Kamera",
         "cam_prompt": "Tekan tombol '📷 Buka Kamera' di bawah untuk mengambil foto komposisi:",
         "lang_confirm": "✅ Pengaturan selesai!\n📍 Negara: {country}\n🌐 Bahasa: Bahasa Indonesia\n\nSilakan kirim foto komposisi makanan.",
@@ -100,7 +97,6 @@ I18N = {
         "label_hadith_title": "📜 ハディースによる教え:",
         "hadith_text": "預言者ムハンマド ﷺ は仰いました:『合法（ハラール）なものは明白であり、非合法（ハラーム）なものも明白である。そして両者の間には疑わしい事柄がある...疑わしいものを避ける者は、自らの宗教と名誉を守ることになる。』[サヒーフ・ブハーリー: 52, サヒーフ・ムスリム: 1599]",
         "label_advice_title": "💡 重要なお知らせ:",
-        "advice_text": "当ボットは無料のAIツールです。100%安全かつ確実な情報をお求めの場合は、公式認証アプリ『Halal Japan』(有料)のご利用を強くお勧めいたします。",
         "cam_btn": "📷 カメラを起動",
         "cam_prompt": "下の『📷 カメラを起動』ボタンを押して原材料名の写真を撮影してください:",
         "lang_confirm": "✅ 設定が完了しました！\n📍 対象国: {country}\n🌐 言語: 日本語\n\n原材料名の写真を送信してください。",
@@ -117,7 +113,6 @@ I18N = {
         "label_hadith_title": "📜 التحذير النبوي الشريف:",
         "hadith_text": "قال رسول الله ﷺ: 'إن الحلال بيّن وإن الحرام بيّن، وبينهما أمور مشتبهات... فمن اتقى الشبهات فقد استبرأ لدينه وعِرضه.' [صحيح البخاري: ٥٢، صحيح مسلم: ١٥٩٩]",
         "label_advice_title": "💡 نصيحة هامة:",
-        "advice_text": "هذا البوت أداة ذكاء اصطناعي مجانية. للحصول على أقصى درجات الدقة والتحقق الموثوق بنسبة 100%، نوصي باستخدام التطبيق المدفوع المعتمد 'Halal Japan'.",
         "cam_btn": "📷 فتح الكاميرا",
         "cam_prompt": "اضغط على زر '📷 فتح الكاميرا' بالأسفل لتصوير قائمة المكونات بوضوح:",
         "lang_confirm": "✅ تم ضبط الإعدادات بنجاح!\n📍 الدولة: {country}\n🌐 اللغة: العربية\n\nيرجى إرسال صورة واضحة لقائمة المكونات.",
@@ -127,55 +122,103 @@ I18N = {
     }
 }
 
+# দেশভিত্তিক নিয়ম ও অনুমোদিত বিশ্বস্ত অ্যাপের তালিকা
 COUNTRY_RULES = {
     "Japan": {
         "title": "JP HALAL FOOD CHECKER 🇯🇵",
+        "app_name": "'Halal Japan'",
+        "advice": {
+            "Bengali": "আমাদের এই বটটি একটি ফ্রি এআই টুল। খাদ্য নির্বাচনে ১০০% নির্ভুলতা ও শতভাগ নিরাপদ থাকার জন্য অফিশিয়ালি ভেরিফাইড পেইড অ্যাপ 'Halal Japan' ব্যবহার করার জন্য বিনীত অনুরোধ করা হচ্ছে।",
+            "English": "This bot is a free AI tool. For 100% verified accuracy and safety in Japan, we kindly advise using the officially verified paid app 'Halal Japan'.",
+            "Indonesian": "Bot ini adalah alat AI gratis. Untuk keakuratan 100% dan keamanan terverifikasi di Jepang, disarankan menggunakan aplikasi resmi berbayar 'Halal Japan'.",
+            "Japanese": "当ボットは無料のAIツールです。日本国内での100%確実な判定をお求めの場合は、公式認証アプリ『Halal Japan』(有料)のご利用を推奨します。",
+            "Arabic": "هذا البوت أداة مجانية. للتحقق الموثوق بنسبة 100% في اليابان، نوصي بشدة باستخدام التطبيق المدفوع المعتمد 'Halal Japan'."
+        },
         "haram_prompt": """
         TARGET REGION: JAPAN.
-        Target label header to locate: 原材料名.
-        - HARAM: 豚肉 (Pork), 豚脂/ラード (Lard), 豚骨 (Pork bone), ポークエキス, 豚ゼラチン, ハム, ベーコン, 牛肉/牛脂/鶏肉 (unless Halal certified), 動物性油脂, 混合油脂, コンソメ, ブイヨン, アルコール (Alcohol), 洋酒, 酒精, 酒, 料理酒, 清酒, 味醂 (Mirin), 発酵調味料 (with alcohol).
-        - SYUBHAH (Avoid unless origin is plant-based '植物性'): ショートニング (Shortening), マーガリン (Margarine), ファットスプレッド, 乳化剤 (Emulsifier / E471/E472), 加工油脂, 食用油脂, コラーゲン, ゼラチン (Gelatin - unless fish-derived), アミノ酸等 (if animal origin unspecified), 酵素 (Enzymes), イーストフード, 骨炭, メンチカツ, 肉エキス.
-        - HALAL: 植物油脂, 大豆油, 菜種油, 小麦粉, 砂糖, 食塩, 植物性タンパク, 野菜エキス, 海藻エキス, 魚介エキス.
+        Header: 原材料名.
+        - HARAM: 豚肉, 豚脂, ラード, 豚骨, ポークエキス, 豚ゼラチン, ハム, ベーコン, 牛肉/鶏肉 (unless Halal marked), 動物性油脂, 混合油脂, コンソメ, アルコール, 洋酒, 酒精, 酒, 料理酒, 清酒, 味醂 (みりん), 発酵調味料 (with alcohol).
+        - SYUBHAH: ショートニング, マーガリン, ファットスプレッド, 乳化剤 (E471/E472), 加工油脂, コラーゲン, ゼラチン (unless fish origin).
         """
     },
     "China": {
         "title": "CN HALAL FOOD CHECKER 🇨🇳",
+        "app_name": "Official Chinese Halal Certification Authorities (伊协清真认证)",
+        "advice": {
+            "Bengali": "আমাদের এই বটটি একটি ফ্রি এআই টুল। চীনে খাদ্যদ্রব্যের ক্ষেত্রে ১০০% নিশ্চয়তা ও নিরাপত্তার জন্য অফিশিয়াল 'Green Halal (清真)' লোগো ও ভেরিফাইড গাইডলাইন অনুসরণ করার অনুরোধ করা হচ্ছে।",
+            "English": "This bot is a free AI tool. For 100% verified safety in China, please prioritize certified 'Halal (清真)' marks or trusted local halal monitoring guides.",
+            "Indonesian": "Bot ini alat AI gratis. Untuk kepastian 100% di Tiongkok, pastikan mencari label resmi 'Halal (清真)' atau panduan sertifikasi lokal.",
+            "Japanese": "当ボットは無料AIツールです。中国製品の100%確実な安全のため、公式の『清真（Halal）』マークや認証機関の確認を推奨します。",
+            "Arabic": "هذا البوت أداة مجانية. لضمان الأمان التام بنسبة 100% في الصين، يرجى البحث عن علامة 'حلال (清真)' المعتمدة رسمياً."
+        },
         "haram_prompt": """
-        TARGET REGION: MAINLAND CHINA & CHINESE PACKAGED FOODS.
-        Target label header to locate: 配料 or 配料表.
-        - HARAM: 猪肉 (Pork), 猪油 (Lard), 猪脂, 猪皮, 猪血 (blood curd), 猪肉浸膏, 培根 (bacon), 火腿 (ham), 动物油脂, 混合油, 鸡精, 鸡汁, 浓汤宝, 料酒 (Chinese cooking wine), 黄酒, 白酒, 花雕酒, 米酒, 烹调酒, 食用酒精, 朗姆酒, 啤酒, 乙醇, 明胶 (non-halal gelatin), 阿胶 (donkey gelatin), 鸭血, 血旺.
-        - SYUBHAH: 起酥油 (shortening), 人造奶油, 人造黄油, 乳化剂 (emulsifier), 食用香精, 骨胶原, 单双甘油脂肪酸酯, 酶制剂.
+        TARGET REGION: CHINA.
+        Header: 配料 / 配料表.
+        - HARAM: 猪肉, 猪油, 猪脂, 猪皮, 猪血, 培根, 火腿, 动物油脂, 鸡精, 浓汤宝, 料酒 (Chinese cooking wine), 黄酒, 白酒, 花雕酒, 米酒, 食用酒精, 啤酒, 明胶, 阿胶, 鸭血.
+        - SYUBHAH: 起酥油, 人造奶油, 人造黄油, 乳化剂, 酶制剂, 食用香精.
+        """
+    },
+    "Korea": {
+        "title": "KR HALAL FOOD CHECKER 🇰🇷",
+        "app_name": "'Mufko' & 'KMF Halal'",
+        "advice": {
+            "Bengali": "আমাদের এই বটটি একটি ফ্রি এআই টুল। দক্ষিণ কোরিয়ায় শতভাগ নিরাপদ খাদ্য বাছাই করতে 'Mufko' অথবা 'KMF Halal' ভেরিফাইড অ্যাপ ব্যবহারের অনুরোধ করা হচ্ছে।",
+            "English": "This bot is a free AI tool. For 100% verified accuracy in South Korea, consider using the verified apps 'Mufko' or 'KMF Halal'.",
+            "Indonesian": "Bot ini alat AI gratis. Untuk keakuratan 100% di Korea Selatan, disarankan menggunakan aplikasi terverifikasi seperti 'Mufko' atau 'KMF Halal'.",
+            "Japanese": "当ボットは無料AIツールです。韓国国内での100%安全な食品選びには、公式アプリ『Mufko』や『KMF Halal』の併用を推奨します。",
+            "Arabic": "هذا البوت أداة مجانية. للتحقق بنسبة 100% في كوريا الجنوبية، نوصي باستخدام التطبيقات المعتمدة مثل 'Mufko' أو 'KMF Halal'."
+        },
+        "haram_prompt": """
+        TARGET REGION: SOUTH KOREA.
+        Header: 원재료명 (Ingredients).
+        - HARAM: 돼지고기 (Pork), 돈지/라드 (Lard), 햄 (Ham), 베이컨 (Bacon), 젤라틴 (돼지), 쇠고기/닭고기 (unless Halal certified), 맛술 (Cooking wine / Mirin), 청주 (Cheongju), 주정 (Fermented ethyl alcohol), 양조주, 알코올 (Alcohol), 동물성유지 (Animal fat). Note: Korean sauces (Gochujang, Ssamjang, Doenjang) often contain fermented alcohol/spirits.
+        - SYUBHAH: 쇼트닝 (Shortening), 마가린 (Margarine), 유화제 (Emulsifier / E471), 가공유지 (Processed fat), 콜라겐 (Collagen), 효소제제 (Enzymes).
+        - HALAL: 식물성유지 (Vegetable oil), 콩기름, 밀가루, 설탕, 천일염.
+        """
+    },
+    "USA": {
+        "title": "US HALAL FOOD CHECKER 🇺🇸",
+        "app_name": "'Scan Halal' & 'Crescent Halal'",
+        "advice": {
+            "Bengali": "আমাদের এই বটটি একটি ফ্রি এআই টুল। যুক্তরাষ্ট্রে ১০০% নির্ভুল ও হালাল পণ্য নিশ্চিত করতে 'Scan Halal' অথবা 'Crescent Halal' অ্যাপ ব্যবহারের অনুরোধ করা হচ্ছে।",
+            "English": "This bot is a free AI tool. For 100% verified accuracy in the US, we kindly advise using dedicated apps like 'Scan Halal' or 'Crescent Halal'.",
+            "Indonesian": "Bot ini alat AI gratis. Untuk kepastian 100% di Amerika Serikat, disarankan menggunakan aplikasi seperti 'Scan Halal' atau 'Crescent Halal'.",
+            "Japanese": "当ボットは無料AIツールです。米国での確実な判定には『Scan Halal』などの認証アプリのご利用をお勧めします。",
+            "Arabic": "هذا البوت أداة مجانية. للتحقق التام بنسبة 100% في الولايات المتحدة، نوصي باستخدام تطبيقات متخصصة مثل 'Scan Halal'."
+        },
+        "haram_prompt": """
+        TARGET REGION: USA (FDA Standard).
+        Header: Ingredients.
+        - HARAM: Pork, Bacon, Ham, Lard, Pork Gelatin, Non-Zabiha Beef/Chicken extracts, Animal Shortening, Carmine/Cochineal extract (E120), Pure Vanilla Extract (naturally contains at least 35% alcohol), Brewer's yeast (from brewing beer), Alcohol, Wine, Rum flavoring with alcohol.
+        - SYUBHAH: Gelatin (unless specified Fish or Halal bovine), Mono and diglycerides (E471), Polysorbate 60/80, Whey powder (unless microbial rennet verified), Enzymes (animal vs microbial), Lipase, Pepsin, Natural and Artificial Flavors.
+        - HALAL: 100% Vegetable oil, Plant-derived shortening, Soy lecithin, Agar-agar, Pectin, Certified Halal/Kosher Pareve (OU/KOF-K).
         """
     },
     "Bangladesh": {
         "title": "BD HALAL FOOD CHECKER 🇧🇩",
+        "app_name": "ইফা হালাল সনদ (Islamic Foundation Halal)",
+        "advice": {
+            "Bengali": "আমাদের এই বটটি একটি ফ্রি এআই টুল। স্থানীয় ও আমদানিকৃত খাদ্য নির্বাচনে শতভাগ নিশ্চয়তার জন্য 'ইসলামিক ফাউন্ডেশন বাংলাদেশ' সনদ ও বিএসটিআই হালাল লোগো অনুসরণ করুন।",
+            "English": "This bot is a free AI tool. For 100% verified certainty in Bangladesh, please prioritize products certified by Islamic Foundation Bangladesh & BSTI Halal.",
+            "Indonesian": "Bot ini alat AI gratis. Untuk kepastian 100% di Bangladesh, utamakan produk bersertifikat Islamic Foundation Bangladesh.",
+            "Japanese": "当ボットは無料AIツールです。バングラデシュではバングラデシュ・イスラム財団やBSTI認証マークの確認を推奨します。",
+            "Arabic": "هذا البوت أداة مجانية. لضمان الحلية بنسبة 100% في بنغلاديش، يرجى التحقق من ختم المؤسسة الإسلامية البنغلاديشية."
+        },
         "haram_prompt": """
-        TARGET REGION: BANGLADESH (LOCAL & IMPORTED FOODS).
-        Target label header to locate: উপাদান, উপাদানসমূহ, Ingredients.
-        Key Halal/Haram/Syubhah rules in Bangladesh context:
-        - HARAM:
-          * Pork, Bacon, Ham, Lard, Pork gelatin (শুয়োরের মাংস, চর্বি, লার্ড, পর্ক জেলাটিন).
-          * Animal gelatin / Gelatin without explicit Halal or Bovine/Fish confirmation.
-          * Carmine / Cochineal (E120) red dye derived from insects.
-          * Alcohol, Spirit, Rum, Wine extract used in desserts or flavoring.
-          * Non-dhabiha imported meat extracts (poultry or beef extracts from non-halal origins).
-        - SYUBHAH (Doubtful / Check Source):
-          * Emulsifiers (ইমালসিফায়ার: E471, E472a-f, E481) without 'Plant origin' (উদ্ভিজ্জ) label.
-          * Shortening (শর্টনিং) and Margarine (মার্জারিন) in bakery items if animal fat source is possible.
-          * Rennet (রেনেট) in imported cheese (animal vs microbial).
-          * Whey powder (হুই পাউডার) if prepared with animal rennet.
-          * E441 (Gelatin), E920 (L-cysteine - often derived from feathers/hair).
-          * Artificial flavorings with alcohol carriers.
-        - HALAL:
-          * Pure vegetable oils (সয়াবিন তেল, সরিষার তেল, পাম তেল), rice, flour, pulses, spices, BSTI Halal certified items.
+        TARGET REGION: BANGLADESH.
+        Header: উপাদান, উপাদানসমূহ, Ingredients.
+        - HARAM: শুয়োরের মাংস/চর্বি (Pork, Lard), অ-হালাল প্রাণিজ জেলাটিন, ক্যারমাইন/E120, অ্যালকোহল, রাম এসেন্স, অ-হালাল আমদানিকৃত মাংসের ব্রোথ।
+        - SYUBHAH: ইমালসিফায়ার (E471, E472), শর্টনিং, মার্জারিন, পনিরের রেনেট, হুই পাউডার, কৃত্রিম ফ্লেভার।
         """
     }
 }
 
 def get_country_selection_menu():
     return QuickReply(items=[
-        QuickReplyItem(action=MessageAction(label="🇯🇵 Japan (日本)", text="Country: Japan")),
-        QuickReplyItem(action=MessageAction(label="🇨🇳 China (中国)", text="Country: China")),
+        QuickReplyItem(action=MessageAction(label="🇯🇵 Japan", text="Country: Japan")),
+        QuickReplyItem(action=MessageAction(label="🇨🇳 China", text="Country: China")),
+        QuickReplyItem(action=MessageAction(label="🇰🇷 Korea", text="Country: Korea")),
+        QuickReplyItem(action=MessageAction(label="🇺🇸 USA", text="Country: USA")),
         QuickReplyItem(action=MessageAction(label="🇧🇩 Bangladesh", text="Country: Bangladesh"))
     ])
 
@@ -196,7 +239,10 @@ def get_direct_camera_quick_reply(lang="Bengali"):
 
 def create_halal_flex_card(status, reason, items_text, lang="Bengali", country="Japan"):
     lang_data = I18N.get(lang, I18N["Bengali"])
-    country_header = COUNTRY_RULES.get(country, COUNTRY_RULES["Japan"])["title"]
+    country_info = COUNTRY_RULES.get(country, COUNTRY_RULES["Japan"])
+    country_header = country_info["title"]
+    advice_text = country_info["advice"].get(lang, country_info["advice"]["Bengali"])
+    
     status_upper = status.upper().strip()
 
     if "HALAL" in status_upper:
@@ -339,7 +385,7 @@ def create_halal_flex_card(status, reason, items_text, lang="Bengali", country="
                         },
                         {
                             "type": "text",
-                            "text": lang_data["advice_text"],
+                            "text": advice_text,
                             "size": "xxs",
                             "color": "#555555",
                             "wrap": True,
@@ -354,7 +400,7 @@ def create_halal_flex_card(status, reason, items_text, lang="Bengali", country="
 
 @app.route("/", methods=['GET'])
 def index():
-    return "Multi-Country (JP, CN, BD) Halal Food Checker Running."
+    return "Global Halal Food Checker Running (JP, CN, KR, US, BD)."
 
 @app.route("/callback", methods=['POST'])
 def callback():
@@ -381,12 +427,16 @@ def handle_text_message(event):
     with ApiClient(configuration) as api_client:
         line_bot_api = MessagingApi(api_client)
 
-        # ধাপ ১: দেশ নির্বাচন
+        # ধাপ ১: ৫টি দেশের নির্বাচন
         if raw_text.startswith("Country:"):
             chosen = raw_text.replace("Country:", "").strip().lower()
             if "china" in chosen:
                 user_countries[user_id] = "China"
-            elif "bangladesh" in chosen or "bd" in chosen or "বাংলাদেশ" in chosen:
+            elif "korea" in chosen or "한국" in chosen:
+                user_countries[user_id] = "Korea"
+            elif "usa" in chosen or "america" in chosen:
+                user_countries[user_id] = "USA"
+            elif "bangladesh" in chosen or "bd" in chosen:
                 user_countries[user_id] = "Bangladesh"
             else:
                 user_countries[user_id] = "Japan"
@@ -425,7 +475,7 @@ def handle_text_message(event):
             )
             return
 
-        # রিচ মেনুর বাটন হ্যান্ডলিং
+        # রিচ মেনুর অ্যাকশন হ্যান্ডলিং
         if any(k in text for k in ["language", "ভাষা", "bahasa", "言語", "لغة", "country", "দেশ", "change language"]):
             line_bot_api.reply_message(
                 ReplyMessageRequest(
@@ -465,8 +515,8 @@ def handle_text_message(event):
 
 def call_gemini_vision(prompt, image_b64):
     candidate_models = [
-        "models/gemini-3.5-flash-lite",
-        "models/gemini-3.8-flash"
+        "models/gemini-2.5-flash",
+        "models/gemini-2.5-flash-lite"
     ]
 
     payload = {
@@ -528,14 +578,14 @@ def handle_image_message(event):
         country_context = COUNTRY_RULES.get(selected_country, COUNTRY_RULES["Japan"])["haram_prompt"]
 
         prompt = f"""
-        Act as Halal Food Inspector specialized in packaged products for the selected target country: {selected_country}.
+        Act as a professional Global Halal Food Inspector specialized in packaged foods for target country: {selected_country}.
         
-        Rules and Database Reference:
+        Rules & Standards for {selected_country}:
         {country_context}
 
         Inspection Procedure:
-        1. Accurately transcribe all words in the ingredient section (原材料名 for Japan, 配料/配料表 for China, উপাদান/Ingredients for Bangladesh).
-        2. Detect all Haram ingredients (pork derivatives, non-halal meat extracts, cooking alcohol/sake/mirin/liaojiu, carmine/E120, animal fats).
+        1. Accurately detect and transcribe the ingredient list from the packaging based on the country's label standard.
+        2. Detect all Haram ingredients (pork derivatives, non-halal meat extracts, cooking alcohol/sake/mirin/liaojiu/cheongju, carmine/E120, animal fats).
         3. Detect any Syubhah/Doubtful components (shortening, emulsifiers E471/E472, unspecified animal gelatin, collagen, enzymes, yeast food) where animal vs plant origin is unstated.
         4. Strict Verdict Hierarchy: If ANY Haram ingredient is found -> status is 'HARAM'. Else if any Syubhah ingredient is found -> status is 'SYUBHAH'. If all ingredients are verified pure plant/mineral/permissible -> status is 'HALAL'.
 
