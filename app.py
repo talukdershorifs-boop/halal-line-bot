@@ -35,51 +35,28 @@ GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 configuration = Configuration(access_token=CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(CHANNEL_SECRET)
 
-# ব্যবহারকারীর পছন্দের ভাষা সংরক্ষণ
+# ব্যবহারকারীর ডেটা সংরক্ষণ
 user_languages = {}
+user_countries = {}
 
-# বহুভাষিক টেক্সট এবং কার্ডের লেবেল ডিকশনারি
+# বহুভাষিক টেক্সট এবং কার্ড কনফিগারেশন
 I18N = {
     "Bengali": {
         "status_halal": "✅ HALAL (হালাল)",
         "status_haram": "❌ HARAM (হারাম)",
         "status_syubhah": "⚠️ SYUBHAH (সন্দেহজনক)",
         "label_reason": "পর্যবেক্ষণ ও কারণ:",
-        "label_items": "শনাক্তকৃত উপাদান (Detected Items):",
+        "label_items": "শনাক্তকৃত উপাদান:",
         "label_hadith_title": "📜 হাদিসের আলোকে সতর্কতা:",
         "hadith_text": "রাসূলুল্লাহ ﷺ বলেছেন: 'হালালও স্পষ্ট এবং হারামও স্পষ্ট। আর এ দুয়ের মাঝে রয়েছে বহু সন্দেহজনক বিষয়... যে ব্যক্তি সন্দেহজনক বিষয় থেকে নিজেকে বাঁচিয়ে রাখল, সে তার দ্বীন ও সম্মান রক্ষা করল।' [সহিহ বুখারি: ৫২, সহিহ মুসলিম: ১৫৯৯]",
         "label_advice_title": "💡 গুরুত্বপূর্ণ পরামর্শ:",
         "advice_text": "আমাদের এই বটটি একটি ফ্রি এআই টুল। খাদ্য নির্বাচনে ১০০% নির্ভুলতা ও শতভাগ নিরাপদ থাকার জন্য অফিশিয়ালি ভেরিফাইড পেইড অ্যাপ 'Halal Japan' ব্যবহার করার জন্য বিনীত অনুরোধ করা হচ্ছে।",
         "cam_btn": "📷 ক্যামেরা খুলুন",
         "cam_prompt": "নিচের '📷 ক্যামেরা খুলুন' বাটনে চাপ দিয়ে পণ্যের উপাদানের স্পষ্ট ছবি তুলুন:",
-        "lang_confirm": "ভাষা 'বাংলা' সেট করা হয়েছে! পণ্যের উপাদানের স্পষ্ট ছবি পাঠান।",
-        "default_prompt": "দয়া করে মেনু থেকে অপশন বেছে নিন অথবা পণ্যের উপাদানের (原材料名) স্পষ্ট ছবি পাঠান।",
-        "haram_info": """🚫 নিশ্চিত হারাম উপাদানসমূহ:
-• 豚肉、ポーク | শুকরের মাংস (Pork)
-• 豚脂肪、豚脂 | শুকরের চর্বি (Pork Fat)
-• ラード、ハム、ベーコン | লার্ড, হ্যাম, বেকন
-• 豚エキス | শুকরের নির্যাস
-• 豚ゼラチン | শুকরের জেলাটিন
-• 牛肉、牛脂 | সাধারণ গরুর মাংস ও চর্বি
-• 鶏肉、チキン | সাধারণ মুরগির মাংস
-• 動物性油脂、混合油脂 | প্রাণিজ চর্বি / মিশ্র চর্বি
-• コンソメ | কনসোমে স্যুপ ব্রোথ
-• アルコール、洋酒、酒精 | অ্যালকোহল, মদ
-• 酒、清酒、料理酒、味醂、みりん | জাপানি রান্নার মদ, মিরিন""",
-        "syubhah_info": """⚠️ সন্দেহজনক উপাদানসমূহ (Syubhah):
-• 乳化剤 (ইমালসিফায়ার) - সোর্স স্পষ্ট না হলে
-• ショートニング (শর্টনিং) - বেকারি ফ্যাট
-• マーガリン (মার্জারিন) - প্রাণিজ তেলের মিশ্রণ
-• ファットスプレッド (ফ্যাটস্প্রেড)
-• 加工油脂 (প্রক্রিয়াজাত চর্বি)
-• コラーゲン / ゼラチン (জেলেটিন - মাছের না হলে)
-
-📜 রাসূলুল্লাহ ﷺ বলেছেন: 'যে ব্যক্তি সন্দেহজনক বিষয় থেকে নিজেকে বাঁচিয়ে রাখল, সে তার দ্বীন রক্ষা করল।' [বুখারি: ৫২]""",
-        "tips_info": """🛒 জাপানে কেনাকাটার টিপস:
-১. প্যাকেটে '植物性' বা '植物油脂' (উদ্ভিজ্জ তেল) লেখা থাকলে তা নিরাপদ।
-২. মিষ্টি, কেক ও আইসক্রিমে প্রায়ই '洋酒' (মদ) বা 'ゼラチン' থাকে, খেয়াল রাখুন।
-৩. সন্দেহজনক খাবার এড়িয়ে চলা সুন্নাহর নির্দেশ।""",
-        "general_info": "ℹ️ JP Halal Food Checker:\nজাপানি খাবারের উপাদানের তালিকা (原材料名) স্ক্যান করে হালাল যাচাই করুন। ১০০% নিশ্চিত তথ্যের জন্য 'Halal Japan' পেইড অ্যাপ ব্যবহার করুন।"
+        "lang_confirm": "ভাষা 'বাংলা' সেট করা হয়েছে!",
+        "country_confirm": "নির্বাচিত দেশ: {country}। এখন এই দেশের খাদ্যতালিকা অনুযায়ী স্ক্যান করা হবে।",
+        "default_prompt": "মেনু থেকে অপশন বেছে নিন অথবা পণ্যের উপাদানের স্পষ্ট ছবি পাঠান।",
+        "select_country_prompt": "ভ্রমণ বা অবস্থানের দেশ নির্বাচন করুন / Select Country:"
     },
     "English": {
         "status_halal": "✅ HALAL",
@@ -92,29 +69,11 @@ I18N = {
         "label_advice_title": "💡 Important Recommendation:",
         "advice_text": "This bot is a free AI tool. For 100% verified accuracy and safety, we kindly advise using the officially verified paid app 'Halal Japan'.",
         "cam_btn": "📷 Open Camera",
-        "cam_prompt": "Tap the '📷 Open Camera' button below to take a clear picture of ingredients:",
-        "lang_confirm": "Language set to English! Please send a clear ingredient picture.",
-        "default_prompt": "Please select an option from the menu or send a photo of the ingredients list (原材料名).",
-        "haram_info": """🚫 Confirmed Haram Ingredients:
-• Pork, Pork Fat, Lard, Bacon, Ham (豚肉, 豚脂, ラード)
-• General Beef, Chicken (non-halal slaughtered)
-• Animal Fat, Mixed Fat (動物性油脂, 混合油脂)
-• Consomme broth (コンソメ)
-• Alcohol, Western Liquor, Ethyl Alcohol (アルコール, 洋酒, 酒精)
-• Sake, Cooking Sake, Mirin (酒, 料理酒, 清酒, 味醂)""",
-        "syubhah_info": """⚠️ Doubtful Ingredients (Syubhah):
-• Emulsifier (乳化剤) - unless plant-derived
-• Shortening (ショートニング) - bakery fat
-• Margarine & Fat Spread (マーガリン, ファットスプレッド)
-• Processed Fat (加工油脂)
-• Gelatin / Collagen (ゼラチン) - unless fish-based
-
-📜 Prophet ﷺ said: 'He who guards against doubtful matters clears himself regarding his religion.' [Bukhari: 52]""",
-        "tips_info": """🛒 Japan Shopping Tips:
-1. Look for '植物性' or '植物油脂' (plant-based oil) on bread and snacks.
-2. Desserts and baked goods often contain '洋酒' (alcohol) or animal gelatin.
-3. When in doubt, leaving it is a Sunnah.""",
-        "general_info": "ℹ️ JP Halal Food Checker:\nScan the Japanese ingredient list (原材料名) to inspect Halal status. For 100% verified certainty, use the 'Halal Japan' paid app."
+        "cam_prompt": "Tap '📷 Open Camera' below to take a clear picture of the ingredient list:",
+        "lang_confirm": "Language set to English!",
+        "country_confirm": "Target country set to: {country}. Food analysis will follow this region's standards.",
+        "default_prompt": "Please choose from the menu or send a photo of the ingredients list.",
+        "select_country_prompt": "Select your country / দেশ বেছে নিন:"
     },
     "Indonesian": {
         "status_halal": "✅ HALAL",
@@ -128,25 +87,10 @@ I18N = {
         "advice_text": "Bot ini adalah alat AI gratis. Untuk keakuratan dan keamanan terverifikasi 100%, disarankan menggunakan aplikasi berbayar resmi 'Halal Japan'.",
         "cam_btn": "📷 Buka Kamera",
         "cam_prompt": "Tekan tombol '📷 Buka Kamera' di bawah untuk mengambil foto komposisi:",
-        "lang_confirm": "Bahasa diatur ke Bahasa Indonesia! Silakan kirim foto komposisi makanan.",
-        "default_prompt": "Silakan pilih menu atau kirim foto daftar komposisi bahan (原材料名).",
-        "haram_info": """🚫 Bahan Haram:
-• Babi, Minyak Babi, Lard, Ham, Bacon (豚肉, 豚脂, ラード)
-• Daging Sapi/Ayam non-halal (牛肉, 鶏肉)
-• Lemak Hewani (動物性油脂, 混合油脂)
-• Kaldu Consomme (コンソメ)
-• Alkohol, Mirin, Sake, Shusei (アルコール, 洋酒, 酒精, みりん, 料理酒)""",
-        "syubhah_info": """⚠️ Bahan Syubhat:
-• Emulsifier (乳化剤) - jika sumbernya belum jelas
-• Shortening & Margarin (ショートニング, マーガリン)
-• Gelatin / Kolagen (ゼラチン) - jika bukan dari ikan
-
-📜 Sabda Nabi ﷺ: 'Barangsiapa menjauhi perkara syubhat, berarti ia telah menyelamatkan agamanya.' [HR. Bukhari: 52]""",
-        "tips_info": """🛒 Tips Belanja di Jepang:
-1. Cari tulisan '植物性' atau '植物油脂' (nabati) pada roti dan biskuit.
-2. Kue dan manisan sering menggunakan '洋酒' (minuman keras) atau gelatin hewani.
-3. Menghindari makanan yang meragukan adalah sunnah.""",
-        "general_info": "ℹ️ JP Halal Food Checker:\nScan daftar bahan (原材料名) untuk memeriksa kehalalan. Untuk kepastian 100%, gunakan aplikasi 'Halal Japan'."
+        "lang_confirm": "Bahasa diatur ke Bahasa Indonesia!",
+        "country_confirm": "Negara dipilih: {country}. Pemeriksaan makanan akan disesuaikan dengan negara ini.",
+        "default_prompt": "Silakan pilih menu atau kirim foto daftar komposisi bahan.",
+        "select_country_prompt": "Pilih Negara:"
     },
     "Japanese": {
         "status_halal": "✅ ハラール (HALAL)",
@@ -160,27 +104,10 @@ I18N = {
         "advice_text": "当ボットは無料のAIツールです。100%安全かつ確実な情報をお求めの場合は、公式認証アプリ『Halal Japan』(有料)のご利用を強くお勧めいたします。",
         "cam_btn": "📷 カメラを起動",
         "cam_prompt": "下の『📷 カメラを起動』ボタンを押して原材料名の写真を撮影してください:",
-        "lang_confirm": "言語を『日本語』に設定しました。原材料名の写真を送信してください。",
+        "lang_confirm": "言語を『日本語』に設定しました。",
+        "country_confirm": "対象国を【{country}】に設定しました。この国の基準に基づいて判定します。",
         "default_prompt": "メニューから選択するか、商品の原材料名（原材料表示）の写真を送信してください。",
-        "haram_info": """🚫 ハラーム（禁止）成分:
-• 豚肉、ポーク、豚脂、ラード、ハム、ベーコン、豚エキス
-• 一般の牛肉・鶏肉（非ハラール屠殺）
-• 動物性油脂、混合油脂
-• コンソメ
-• アルコール、洋酒、酒精、ラム、ブランデー
-• 酒、清酒、料理酒、味醂、みりん""",
-        "syubhah_info": """⚠️ シュブハ（疑わしい）成分:
-• 乳化剤（植物性由来の明記がないもの）
-• ショートニング、マーガリン、ファットスプレッド
-• 加工油脂
-• ゼラチン、コラーゲン（魚由来と明記がないもの）
-
-📜 預言者 ﷺ:『疑わしきを避ける者は自らの信仰を守る』[ブハーリー: 52]""",
-        "tips_info": """🛒 日本でのお買い物ヒント:
-1. パンやお菓子は『植物性油脂』の表示を確認しましょう。
-2. 洋菓子やデザートには『洋酒』や豚ゼラチンが使われることが多いです。
-3. 疑わしいものは避けることが推奨されます。""",
-        "general_info": "ℹ️ JP Halal Food Checker:\n商品の原材料表示をAIで分析します。100%確実な判定には有料アプリ『Halal Japan』のご利用を推奨します。"
+        "select_country_prompt": "対象国を選択してください:"
     },
     "Arabic": {
         "status_halal": "✅ حلال (HALAL)",
@@ -194,34 +121,53 @@ I18N = {
         "advice_text": "هذا البوت أداة ذكاء اصطناعي مجانية. للحصول على أقصى درجات الدقة والتحقق الموثوق بنسبة 100%، نوصي باستخدام التطبيق المدفوع المعتمد 'Halal Japan'.",
         "cam_btn": "📷 فتح الكاميرا",
         "cam_prompt": "اضغط على زر '📷 فتح الكاميرا' بالأسفل لتصوير قائمة المكونات بوضوح:",
-        "lang_confirm": "تم ضبط اللغة إلى 'العربية'! يرجى إرسال صورة واضحة لقائمة المكونات.",
-        "default_prompt": "يرجى الاختيار من القائمة أو إرسال صورة واضحة لقائمة المكونات (原材料名).",
-        "haram_info": """🚫 المكونات المحرمة قطعيًا:
-• لحم الخنزير، دهن الخنزير، لارد، شحم الخنزير (豚肉, 豚脂, ラード)
-• اللحوم والدواجن غير المذكاة إسلاميًا (牛肉, 鶏肉)
-• الدهون الحيوانية المختلطة (動物性油脂, 混合油脂)
-• مرقة اللحم كونسوميه (コンソメ)
-• الكحول، الخمور، الكحول الإيثيلي (アルコール, 洋酒, 酒精)
-• نبيذ الطهي، الساكي، الميرين (酒, 料理酒, 清酒, 味醂)""",
-        "syubhah_info": """⚠️ المكونات المشتبهة (شبهة):
-• المستحلبات (乳化剤) - ما لم يُنص على أنها نباتية
-• السمن النباتي/شورتنينج والمارجرين (ショートニング, マーガリン)
-• الزيوت المعالجة (加工油脂)
-• الجيلاتين والكولاجين (ゼラチン) - ما لم يُحدد أنه سمكي
-
-📜 قال ﷺ: 'فمن اتقى الشبهات فقد استبرأ لدينه وعرضه' [البخاري: ٥٢]""",
-        "tips_info": """🛒 نصائح التسوق في اليابان:
-١. ابحث عن عبارة '植物性' أو '植物油脂' (نباتي) في المخبوزات.
-٢. تحتوي الحلويات والآيس كريم كثيرًا على '洋酒' (خمور غربية) أو جيلاتين خنزيري.
-٣. ترك الشبهات سلامة للدين.""",
-        "general_info": "ℹ️ JP Halal Food Checker:\nفحص قائمة المكونات اليابانية (原材料名) للتأكد من حليتها. للتحقق النهائي بنسبة 100%، استخدم تطبيق 'Halal Japan' المعتمد."
+        "lang_confirm": "تم ضبط اللغة إلى 'العربية'!",
+        "country_confirm": "الدولة المحددة: {country}. سيتم فحص الأطعمة وفق معايير هذا البلد.",
+        "default_prompt": "يرجى الاختيار من القائمة أو إرسال صورة واضحة لقائمة المكونات.",
+        "select_country_prompt": "اختر الدولة المراد فحص أطعمتها:"
     }
 }
 
-def get_direct_camera_quick_reply(lang="Bengali"):
-    label = I18N.get(lang, I18N["Bengali"])["cam_btn"]
+# দেশ অনুযায়ী হারাম ও সন্দেহজনক উপাদানের ডাটাবেস
+COUNTRY_RULES = {
+    "Japan": {
+        "title": "JP HALAL FOOD CHECKER 🇯🇵",
+        "label_name": "原材料名 (Raw Materials)",
+        "haram_prompt": """
+        TARGET REGION: JAPAN.
+        Target label header to locate: 原材料名.
+        Confirmed HARAM ingredients in Japan:
+        - Pork derivatives: 豚肉, ポーク, 豚脂, 豚脂肪, ラード (lard), ハム (ham), ベーコン (bacon), 豚エキス, 豚ゼラチン, ポークエキス, ポークパウダー, 豚血.
+        - Non-halal meat & general broths: 牛肉, 牛脂, 鶏肉, チキン, チキンエキス, チキンパウダー, ビーフエキス, 肉エキス, コンソメ, ブイヨン.
+        - Animal/mixed fats: 動物性油脂, 混合油脂, ヘット.
+        - Alcohol & cooking wine: アルコール, 洋酒, 酒精, ラム, ワイン, ブランディ, ウィスキー, リキュール, 酒, 料理酒, 清酒, 醸造調味料 (if alcoholic), 味醂, みりん, 発酵調味料 (with alcohol).
+        - Non-fish Gelatin: ゼラチン, 豚コラーゲン.
+        SYUBHAH ingredients in Japan:
+        - 加工油脂, 食用油脂, 植物油脂 (usually ok, verify if mixed), マーガリン, ショートニング, ファットスプレッド, 乳化剤 (emulsifier), コラーゲン.
+        """
+    },
+    "China": {
+        "title": "CN HALAL FOOD CHECKER 🇨🇳",
+        "label_name": "配料 / 配料表 (Ingredients)",
+        "haram_prompt": """
+        TARGET REGION: MAINLAND CHINA & CHINESE PACKAGED FOODS.
+        Target label header to locate: 配料 or 配料表.
+        Confirmed HARAM ingredients in China:
+        - Pork derivatives: 猪肉, 猪油, 猪脂, 猪皮, 猪血 (blood curd), 猪肉浸膏, 猪肉粉, 培根 (bacon), 火腿 (ham), 猪骨汤, 猪肉精.
+        - Non-halal meats & meat broths: 牛肉, 鸡肉, 鸭肉, 鹅肉, 动物油脂, 混合油, 鸡精, 鸡汁, 鸡粉, 浓汤宝, 牛肉膏.
+        - Chinese cooking wine & alcohol: 料酒, 黄酒, 白酒, 花雕酒, 米酒, 烹调酒, 食用酒精, 朗姆酒, 红酒, 葡萄酒, 啤酒, 乙醇. (Pay critical attention: Chinese savory dishes, seasonings, and packaged noodles frequently contain 料酒 or 黄酒).
+        - Blood products: 血旺, 鸭血, 猪血.
+        - Non-halal gelatin: 明胶, 动物明胶, 猪皮明胶, 阿胶 (donkey gelatin).
+        SYUBHAH ingredients in China:
+        - 起酥油 (shortening), 人造奶油, 人造黄油, 动植物微球油脂, 单双甘油脂肪酸酯, 乳化剂 (emulsifier), 食用香精 (flavoring - check if alcohol solvent), 骨胶原.
+        """
+    }
+}
+
+def get_country_selection_menu():
     return QuickReply(items=[
-        QuickReplyItem(action=CameraAction(label=label))
+        QuickReplyItem(action=MessageAction(label="🇯🇵 Japan (日本)", text="Country: Japan")),
+        QuickReplyItem(action=MessageAction(label="🇨🇳 China (中国)", text="Country: China"))
     ])
 
 def get_language_selection_menu():
@@ -230,14 +176,20 @@ def get_language_selection_menu():
         QuickReplyItem(action=MessageAction(label="🇬🇧 English", text="Set: English")),
         QuickReplyItem(action=MessageAction(label="🇮🇩 Indonesia", text="Set: Indonesian")),
         QuickReplyItem(action=MessageAction(label="🇯🇵 日本語", text="Set: Japanese")),
-        QuickReplyItem(action=MessageAction(label="🇸🇦 العربية", text="Set: Arabic")),
+        QuickReplyItem(action=MessageAction(label="🇸🇦 العربية", text="Set: Arabic"))
     ])
 
-def create_halal_flex_card(status, reason, items_text, lang="Bengali"):
-    """নির্বাচিত ভাষায় সম্পূর্ণ ডায়নামিক Flex Message কার্ড তৈরি করে"""
+def get_direct_camera_quick_reply(lang="Bengali"):
+    label = I18N.get(lang, I18N["Bengali"])["cam_btn"]
+    return QuickReply(items=[
+        QuickReplyItem(action=CameraAction(label=label))
+    ])
+
+def create_halal_flex_card(status, reason, items_text, lang="Bengali", country="Japan"):
     lang_data = I18N.get(lang, I18N["Bengali"])
+    country_header = COUNTRY_RULES.get(country, COUNTRY_RULES["Japan"])["title"]
     status_upper = status.upper().strip()
-    
+
     if "HALAL" in status_upper:
         header_color = "#107C41"
         status_title = lang_data["status_halal"]
@@ -265,7 +217,7 @@ def create_halal_flex_card(status, reason, items_text, lang="Bengali"):
             "contents": [
                 {
                     "type": "text",
-                    "text": "JP HALAL FOOD CHECKER",
+                    "text": country_header,
                     "color": "#FFFFFF",
                     "size": "xs",
                     "weight": "bold",
@@ -393,7 +345,7 @@ def create_halal_flex_card(status, reason, items_text, lang="Bengali"):
 
 @app.route("/", methods=['GET'])
 def index():
-    return "JP Halal Food Checker Bot Running Multi-Language."
+    return "JP/CN Multi-Country Halal Food Checker Running."
 
 @app.route("/callback", methods=['POST'])
 def callback():
@@ -409,18 +361,36 @@ def callback():
 
 @handler.add(MessageEvent, message=TextMessageContent)
 def handle_text_message(event):
-    global user_languages
+    global user_languages, user_countries
     user_id = event.source.user_id
     raw_text = event.message.text.strip()
     text = raw_text.lower()
-    
-    # ব্যবহারকারী পূর্বে ভাষা সেট না করলে ডিফল্ট বাংলা
+
     current_lang = user_languages.get(user_id, "Bengali")
+    current_country = user_countries.get(user_id, "Japan")
 
     with ApiClient(configuration) as api_client:
         line_bot_api = MessagingApi(api_client)
 
-        # ভাষা পরিবর্তন সেটআপ লজিক
+        # দেশ নির্বাচন প্রক্রিয়া
+        if raw_text.startswith("Country:"):
+            chosen = raw_text.replace("Country:", "").strip()
+            if "china" in chosen.lower():
+                user_countries[user_id] = "China"
+            else:
+                user_countries[user_id] = "Japan"
+
+            current_country = user_countries[user_id]
+            msg = I18N[current_lang]["country_confirm"].format(country=current_country)
+            line_bot_api.reply_message(
+                ReplyMessageRequest(
+                    reply_token=event.reply_token,
+                    messages=[TextMessage(text=msg, quick_reply=get_direct_camera_quick_reply(current_lang))]
+                )
+            )
+            return
+
+        # ভাষা পরিবর্তন প্রক্রিয়া
         if raw_text.startswith("Set:"):
             target = raw_text.replace("Set:", "").strip().lower()
             if "english" in target:
@@ -435,17 +405,29 @@ def handle_text_message(event):
                 user_languages[user_id] = "Bengali"
 
             current_lang = user_languages[user_id]
-            reply = I18N[current_lang]["lang_confirm"]
+            msg = I18N[current_lang]["lang_confirm"]
             line_bot_api.reply_message(
                 ReplyMessageRequest(
-                    reply_token=event.reply_token, 
-                    messages=[TextMessage(text=reply, quick_reply=get_direct_camera_quick_reply(current_lang))]
+                    reply_token=event.reply_token,
+                    messages=[TextMessage(text=msg, quick_reply=get_direct_camera_quick_reply(current_lang))]
                 )
             )
             return
 
-        # রিচ মেনু ও বাটন অ্যাকশন
-        if any(k in text for k in ["take a photo", "camera", "ক্যামেরা", "scan", "ছবি", "kamera", "カメラ"]):
+        # কমান্ড ও মেনু অ্যাকশন
+        if any(k in text for k in ["country", "দেশ", "negara", "国", "بلد"]):
+            line_bot_api.reply_message(
+                ReplyMessageRequest(
+                    reply_token=event.reply_token,
+                    messages=[
+                        TextMessage(
+                            text=I18N[current_lang]["select_country_prompt"],
+                            quick_reply=get_country_selection_menu()
+                        )
+                    ]
+                )
+            )
+        elif any(k in text for k in ["take a photo", "camera", "ক্যামেরা", "scan", "ছবি", "kamera", "カメラ"]):
             line_bot_api.reply_message(
                 ReplyMessageRequest(
                     reply_token=event.reply_token,
@@ -457,33 +439,13 @@ def handle_text_message(event):
                     ]
                 )
             )
-        elif "haram" in text or "হারাম" in text or "ハラーム" in text:
-            reply = I18N[current_lang]["haram_info"]
-            line_bot_api.reply_message(
-                ReplyMessageRequest(reply_token=event.reply_token, messages=[TextMessage(text=reply)])
-            )
-        elif "syubhah" in text or "doubtful" in text or "সন্দেহ" in text or "シュブハ" in text or "شبهة" in text:
-            reply = I18N[current_lang]["syubhah_info"]
-            line_bot_api.reply_message(
-                ReplyMessageRequest(reply_token=event.reply_token, messages=[TextMessage(text=reply)])
-            )
-        elif "tip" in text or "কেনাকাটা" in text or "tips" in text:
-            reply = I18N[current_lang]["tips_info"]
-            line_bot_api.reply_message(
-                ReplyMessageRequest(reply_token=event.reply_token, messages=[TextMessage(text=reply)])
-            )
-        elif "info" in text or "guide" in text or "সাহায্য" in text or "bantuan" in text or "ガイド" in text:
-            reply = I18N[current_lang]["general_info"]
-            line_bot_api.reply_message(
-                ReplyMessageRequest(reply_token=event.reply_token, messages=[TextMessage(text=reply)])
-            )
-        elif "language" in text or "ভাষা" in text or "bahasa" in text or "言語" in text or "لغة" in text:
+        elif any(k in text for k in ["language", "ভাষা", "bahasa", "言語", "لغة"]):
             line_bot_api.reply_message(
                 ReplyMessageRequest(
                     reply_token=event.reply_token,
                     messages=[
                         TextMessage(
-                            text="Select Language / Pilih Bahasa / ভাষা বেছে নিন / 言語を選択してください:",
+                            text="Select Language / ভাষা বেছে নিন / Pilih Bahasa / 言語選択:",
                             quick_reply=get_language_selection_menu()
                         )
                     ]
@@ -495,8 +457,8 @@ def handle_text_message(event):
                     reply_token=event.reply_token,
                     messages=[
                         TextMessage(
-                            text=I18N[current_lang]["default_prompt"],
-                            quick_reply=get_language_selection_menu()
+                            text=f"📍 Current Country: {current_country}\n" + I18N[current_lang]["default_prompt"],
+                            quick_reply=get_country_selection_menu()
                         )
                     ]
                 )
@@ -545,9 +507,10 @@ def call_gemini_vision(prompt, image_b64):
 
 @handler.add(MessageEvent, message=ImageMessageContent)
 def handle_image_message(event):
-    global user_languages
+    global user_languages, user_countries
     user_id = event.source.user_id
     selected_lang = user_languages.get(user_id, "Bengali")
+    selected_country = user_countries.get(user_id, "Japan")
 
     try:
         with ApiClient(configuration) as api_client:
@@ -563,17 +526,24 @@ def handle_image_message(event):
         del raw_bytes, img, out_buf
         gc.collect()
 
+        country_context = COUNTRY_RULES.get(selected_country, COUNTRY_RULES["Japan"])["haram_prompt"]
+
         prompt = f"""
-        Act as Halal Food Inspector Japan.
-        Inspect the Japanese ingredients list (原材料名).
-        Haram components: 豚肉, ポーク, 豚脂, 豚脂肪, ラード, ハム, ベーコン, 豚エキス, 豚ゼラチン, 牛肉, 牛脂, 動物性油脂, 混合油脂, コンソメ, 鶏肉, チキン, アルコール, 洋酒, 酒精, ラム, ワイン, ブランディ, ウィスキー, 酒, 料理酒, 清酒, 味醂, みりん, ゼラチン.
-        Syubhah components: 加工油脂, 食用油脂, マーガリン, ショートニング, ファットスプレッド, コラーゲン, 乳化剤.
+        Act as Halal Food Inspector specialized in East Asian packaged products.
+        Selected Country to inspect: {selected_country}
+        
+        {country_context}
+
+        Your task:
+        1. Find the ingredient list on the packaging based on the country's label standard.
+        2. Detect all Haram, Syubhah, and Halal ingredients accurately.
+        3. Determine the final verdict: 'HALAL', 'HARAM', or 'SYUBHAH'.
 
         You MUST respond ONLY with a valid JSON matching this schema:
         {{
             "status": "HALAL" or "HARAM" or "SYUBHAH",
             "reason": "Clear explanation strictly in {selected_lang}",
-            "items": "Detected specific Japanese ingredients with Kanji and translated explanation strictly in {selected_lang}"
+            "items": "Detected specific ingredients with original Kanji/Hanzi and clear explanation strictly in {selected_lang}"
         }}
         """
 
@@ -584,7 +554,7 @@ def handle_image_message(event):
         reason = result_json.get("reason", "")
         items = result_json.get("items", "")
 
-        flex_container = create_halal_flex_card(status, reason, items, selected_lang)
+        flex_container = create_halal_flex_card(status, reason, items, selected_lang, selected_country)
         reply_payload = [FlexMessage(alt_text=f"Check Result: {status}", contents=flex_container)]
 
     except Exception as e:
