@@ -37,8 +37,9 @@ handler = WebhookHandler(CHANNEL_SECRET)
 
 user_languages = {}
 user_countries = {}
-user_last_scans = {}  # ফলো-আপ চ্যাটের জন্য শেষ স্ক্যানের ফলাফল সংরক্ষণ
+user_last_scans = {}
 
+# বহুভাষিক ইন্টারফেস কনফিগারেশন
 I18N = {
     "Bengali": {
         "status_halal": "✅ HALAL (হালাল)",
@@ -132,6 +133,7 @@ I18N = {
     }
 }
 
+# দেশভিত্তিক তথ্য ভাণ্ডার (Haram, Syubhah, Tips, Info, Advice)
 COUNTRY_DETAILS = {
     "Japan": {
         "title": "JP HALAL FOOD CHECKER 🇯🇵",
@@ -166,6 +168,7 @@ COUNTRY_DETAILS = {
 • পণ্যের উপাদানের তালিকার (原材料名) সোজা ও স্পষ্ট ছবি স্ক্যান করুন।
 • শতভাগ নিরাপদ থাকার জন্য অফিশিয়াল 'Halal Japan' অ্যাপ ব্যবহার করুন।"""
     },
+
     "China": {
         "title": "CN HALAL FOOD CHECKER 🇨🇳",
         "advice_app": "আমাদের এই বটটি একটি ফ্রি এআই টুল। চীনে খাদ্যদ্রব্যের ক্ষেত্রে নিশ্চিত হতে 'Green Halal (清真)' লোগো ও সার্টিফায়েড গাইডলাইন অনুসরণ করুন।",
@@ -196,6 +199,7 @@ COUNTRY_DETAILS = {
 • পণ্যের উপাদানের তালিকার (配料 / 配料表) অংশের ছবি স্ক্যান করুন।
 • চীনে অনুমোদিত হালাল অথরিটির '清真' সিল দেখে কেনা সবচেয়ে নিরাপদ।"""
     },
+
     "Korea": {
         "title": "KR HALAL FOOD CHECKER 🇰🇷",
         "advice_app": "আমাদের এই বটটি একটি ফ্রি এআই টুল। দক্ষিণ কোরিয়ায় শতভাগ নিরাপদ খাদ্য বাছাই করতে 'Mufko' অথবা 'KMF Halal' অ্যাপ ব্যবহারের অনুরোধ করা হচ্ছে।",
@@ -227,6 +231,7 @@ COUNTRY_DETAILS = {
 • পণ্যের উপাদানের তালিকার (원재료명) স্পষ্ট ছবি পাঠান।
 • কোরিয়ায় শতভাগ নিশ্চিত থাকতে 'Mufko' অ্যাপ বা KMF Halal সিল চেক করুন।"""
     },
+
     "USA": {
         "title": "US HALAL FOOD CHECKER 🇺🇸",
         "advice_app": "আমাদের এই বটটি একটি ফ্রি এআই টুল। যুক্তরাষ্ট্রে ১০০% নির্ভুল ও হালাল পণ্য নিশ্চিত করতে 'Scan Halal' অথবা 'Crescent Halal' অ্যাপ ব্যবহার করুন।",
@@ -250,13 +255,14 @@ COUNTRY_DETAILS = {
 
         "tips": """🛒 [USA 🇺🇸] কেনাকাটার টিপস:
 ১. Kosher Pareve (OU Pareve, Circle-U) সিল থাকলে মাংস ও অ্যালকোহলমুক্ত থাকে।
-二. মার্শমেলো, গামি ক্যান্ডিতে Gelatin থাকে যা অধিকাংশ ক্ষেত্রে শুকর থেকে আসে।
+২. মার্শমেলো, গামি ক্যান্ডিতে Gelatin থাকে যা অধিকাংশ ক্ষেত্রে শুকর থেকে আসে।
 ৩. পাউরুটি কেনার সময় '100% Plant Based' বা 'Vegetable Shortening' লেখা খুঁজুন।""",
 
         "info": """ℹ️ [USA 🇺🇸] নির্দেশিকা:
 • প্যাকেটের 'Ingredients' অংশের স্পষ্ট ছবি স্ক্যান করুন।
 • সার্বিক যাচাইয়ের জন্য 'Scan Halal' অ্যাপ ব্যবহার করতে পারেন।"""
     },
+
     "Bangladesh": {
         "title": "BD HALAL FOOD CHECKER 🇧🇩",
         "advice_app": "আমাদের এই বটটি একটি ফ্রি এআই টুল। স্থানীয় ও আমদানিকৃত খাদ্যে নিশ্চিত থাকতে 'ইসলামিক ফাউন্ডেশন বাংলাদেশ' ও বিএসটিআই হালাল লোগো অনুসরণ করুন।",
@@ -311,7 +317,7 @@ COUNTRY_RULES = {
         "haram_prompt": """
         TARGET REGION: SOUTH KOREA.
         Header: 원재료명.
-        - HARAM: 돼지고기, 돈지/라드, 햄, 베이컨, 젤라틴 (돼지), 쇠고기/닭고기 (unless Halal marked), 맛술 (Cooking wine), 청주, 주정 (Alcohol), 양조주, 동물性유지.
+        - HARAM: 돼지고기, 돈지/라드, 햄, 베이컨, 젤라틴 (돼지), 쇠고기/닭고기 (unless Halal marked), 맛술 (Cooking wine), 청주, 주정 (Alcohol), 양조주, 동물성유지.
         - SYUBHAH: 쇼트닝, 마가린, 유화제 (E471), 가공유지, 콜라겐, 효소제제.
         """
     },
@@ -439,7 +445,6 @@ def create_halal_flex_card(status, reason, items_text, alternatives_text, lang="
         }
     ]
 
-    # যদি বিকল্প সাজেশন থাকে (হারাম বা সন্দেহজনক পণ্যের জন্য)
     if alternatives_text and alternatives_text.strip():
         body_contents.append({
             "type": "box",
@@ -562,7 +567,7 @@ def create_halal_flex_card(status, reason, items_text, alternatives_text, lang="
 
 @app.route("/", methods=['GET'])
 def index():
-    return "Global Halal Food Checker with Alternatives & Micro-chat Active."
+    return "Global Halal Food Checker Active with Gemini 3.5 Engine."
 
 @app.route("/callback", methods=['POST'])
 def callback():
@@ -589,7 +594,7 @@ def handle_text_message(event):
     with ApiClient(configuration) as api_client:
         line_bot_api = MessagingApi(api_client)
 
-        # মাইক্রো-চ্যাট: শেষ স্ক্যানের উপাদানের বিস্তারিত ব্যাখ্যা
+        # মাইক্রো-চ্যাট: উপাদানের ব্যাখ্যা
         if text == "explain_last_scan" or "বিস্তারিত" in text or "explain" in text:
             last_scan = user_last_scans.get(user_id)
             if last_scan:
@@ -659,7 +664,7 @@ def handle_text_message(event):
             )
             return
 
-        # রিচ মেনু বাটন C: হারাম উপাদান
+        # হারাম উপাদান বাটন (C)
         if any(k in text for k in ["haram", "হারাম", "ハラーム"]):
             country_haram_text = COUNTRY_DETAILS.get(current_country, COUNTRY_DETAILS["Japan"])["haram"]
             line_bot_api.reply_message(
@@ -667,7 +672,7 @@ def handle_text_message(event):
             )
             return
 
-        # রিচ মেনু বাটন D: সন্দেহজনক উপাদান
+        # সন্দেহজনক উপাদান বাটন (D)
         if any(k in text for k in ["syubhah", "doubtful", "সন্দেহ", "シュブハ", "شبهة"]):
             country_syubhah_text = COUNTRY_DETAILS.get(current_country, COUNTRY_DETAILS["Japan"])["syubhah"]
             line_bot_api.reply_message(
@@ -675,7 +680,7 @@ def handle_text_message(event):
             )
             return
 
-        # রিচ মেনু বাটন E: শপিং টিপস
+        # শপিং টিপস বাটন (E)
         if any(k in text for k in ["tip", "কেনাকাটা", "tips"]):
             country_tips_text = COUNTRY_DETAILS.get(current_country, COUNTRY_DETAILS["Japan"])["tips"]
             line_bot_api.reply_message(
@@ -683,7 +688,7 @@ def handle_text_message(event):
             )
             return
 
-        # রিচ মেনু বাটন F: গাইড ও তথ্য
+        # গাইড ও তথ্য বাটন (F)
         if any(k in text for k in ["info", "guide", "সাহায্য", "তথ্য", "bantuan", "ガイド"]):
             country_info_text = COUNTRY_DETAILS.get(current_country, COUNTRY_DETAILS["Japan"])["info"]
             line_bot_api.reply_message(
@@ -691,7 +696,7 @@ def handle_text_message(event):
             )
             return
 
-        # রিচ মেনু বাটন B: দেশ ও ভাষা
+        # দেশ ও ভাষা বাটন (B)
         if any(k in text for k in ["language", "ভাষা", "bahasa", "言語", "لغة", "country", "দেশ", "change language"]):
             line_bot_api.reply_message(
                 ReplyMessageRequest(
@@ -706,7 +711,7 @@ def handle_text_message(event):
             )
             return
 
-        # রিচ মেনু বাটন A: ছবি তোলা
+        # ক্যামেরা বাটন (A)
         if any(k in text for k in ["take a photo", "camera", "ক্যামেরা", "scan", "ছবি", "kamera", "カメラ"]):
             line_bot_api.reply_message(
                 ReplyMessageRequest(
@@ -721,23 +726,24 @@ def handle_text_message(event):
             )
             return
 
-        # ডিফল্ট রিপ্লাই
+        # ডিফল্ট মেসেজ
         line_bot_api.reply_message(
             ReplyMessageRequest(
                 reply_token=event.reply_token,
                 messages=[
                     TextMessage(
-                        text=f"📍 Country: {current_country} | 🌐 Language: {current_lang}\n" + I18N[current_lang]["default_prompt"],
+                        text=f"📍 Current Country: {current_country} | 🌐 Language: {current_lang}\n" + I18N[current_lang]["default_prompt"],
                         quick_reply=get_country_selection_menu()
                     )
                 ]
             )
         )
 
+# আপডেট করা এআই ইঞ্জিন (Gemini 3.5 & 3.8)
 def call_gemini_vision(prompt, image_b64):
     candidate_models = [
-        "models/gemini-2.5-flash",
-        "models/gemini-2.5-flash-lite"
+        "models/gemini-3.5-flash-lite",
+        "models/gemini-3.8-flash"
     ]
 
     payload = {
@@ -828,7 +834,6 @@ def handle_image_message(event):
         items = result_json.get("items", "")
         alternatives = result_json.get("alternatives", "")
 
-        # শেষ স্ক্যান ক্যাশ করা
         user_last_scans[user_id] = {
             "status": status,
             "reason": reason,
