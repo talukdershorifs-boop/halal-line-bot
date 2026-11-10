@@ -36,25 +36,38 @@ GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 configuration = Configuration(access_token=CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(CHANNEL_SECRET)
 
-# মেমরি স্টোরেজ
+# In-memory session tracking
 user_languages = {}
 user_countries = {}
 user_last_scans = {}
 user_scan_history = {}
 
-# ==========================================
-# ১,৩৪২টি উপাদানের CSV ডাটাবেস লোড ও ইনডেক্সিং
-# ==========================================
-CSV_FILE_PATH = os.path.join(os.path.dirname(__file__), 'halal_ingredients_ALL_app_unique.csv')
+# ============================================================================
+# CSV Database Loader & Multi-Path Resilient Indexer
+# ============================================================================
 LOCAL_DB = {}
 CSV_HARAM_KEYWORDS = []
 CSV_VERIFY_KEYWORDS = []
 
 def load_ingredients_database():
     global LOCAL_DB, CSV_HARAM_KEYWORDS, CSV_VERIFY_KEYWORDS
-    if os.path.exists(CSV_FILE_PATH):
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    possible_files = [
+        os.path.join(base_dir, 'halal_ingredients_ALL_app_unique.csv'),
+        os.path.join(base_dir, 'halal data.csv'),
+        'halal_ingredients_ALL_app_unique.csv',
+        'halal data.csv'
+    ]
+
+    target_file = None
+    for p in possible_files:
+        if os.path.exists(p):
+            target_file = p
+            break
+
+    if target_file:
         try:
-            df = pd.read_csv(CSV_FILE_PATH)
+            df = pd.read_csv(target_file)
             for _, row in df.iterrows():
                 jp_name = str(row.get('japanese', '')).strip()
                 status = str(row.get('status', 'VERIFY')).strip().upper()
@@ -76,21 +89,23 @@ def load_ingredients_database():
                     LOCAL_DB[jp_name] = item_info
                     if status == 'HARAM':
                         CSV_HARAM_KEYWORDS.append(jp_name)
-                    elif status == 'VERIFY':
+                    elif status in ['VERIFY', 'SYUBHAH']:
                         CSV_VERIFY_KEYWORDS.append(jp_name)
 
                 if e_num and e_num != 'nan':
                     LOCAL_DB[e_num.upper()] = item_info
 
-            print(f"Successfully loaded {len(LOCAL_DB)} lookup keys from CSV Database.")
+            print(f"Loaded {len(LOCAL_DB)} verified item keys from {target_file}")
         except Exception as e:
-            print(f"Error loading CSV Database: {e}")
+            print(f"Non-fatal error reading CSV dataset: {e}")
     else:
-        print("Warning: CSV database file not found. Running with AI native rules.")
+        print("Notice: Local CSV dataset not found on disk. Operating on foundational AI inspection.")
 
 load_ingredients_database()
 
-# বহুভাষিক ইন্টারফেস কনফিগারেশন
+# ============================================================================
+# Multi-Language UI Text Configuration
+# ============================================================================
 I18N = {
     "English": {
         "status_halal": "✅ HALAL",
@@ -105,7 +120,7 @@ I18N = {
         "cam_btn": "📷 Open Camera",
         "cam_prompt": "Tap '📷 Open Camera' below to take a clear picture of the ingredient list:",
         "lang_confirm": "✅ Settings updated!\n📍 Country: {country}\n🌐 Language: English\n\nPlease send a clear photo of the ingredient list.",
-        "country_selected": "📍 Country selected: {country}\nLanguage automatically set to English. You can also pick another language below:",
+        "country_selected": "📍 Country selected: {country}\nLanguage set to English. You can also pick another language below:",
         "default_prompt": "Please choose from the menu or send a photo of the ingredients list.",
         "select_country_first": "🌍 Please select your country or destination:",
         "btn_explain": "❓ Explain Ingredients",
@@ -232,6 +247,9 @@ I18N = {
     }
 }
 
+# ============================================================================
+# Localized Country Database (Haram, Syubhah, Shopping Tips, Info)
+# ============================================================================
 COUNTRY_DETAILS = {
     "Japan": {
         "title": "JP HALAL FOOD CHECKER 🇯🇵",
@@ -382,7 +400,6 @@ COUNTRY_RULES = {
         "haram_prompt": """
         TARGET REGION: JAPAN.
         Header: 原材料名.
-        Key Halal/Haram/Syubhah rules:
         - HARAM: 豚肉 (Pork), 豚脂/ラード (Lard), 豚骨 (Pork bone), ポークエキス, 豚ゼラチン, ハム, ベーコン, 牛肉/牛脂/鶏肉 (unless Halal marked), 動物性油脂, 混合油脂, コンソメ, ブイヨン, アルコール (Alcohol), 洋酒, 酒精, 酒, 料理酒, 清酒, 味醂 (Mirin), 発酵調味料 (with alcohol).
         - SYUBHAH: ショートニング (Shortening), マーガリン (Margarine), ファットスプレッド, 乳化剤 (Emulsifier / E471/E472), 加工油脂, 食用油脂, コラーゲン, ゼラチン (Gelatin - unless fish-derived), アミノ酸等 (if animal origin unspecified), 酵素 (Enzymes), イーストフード, 骨炭, メンチカツ, 肉エキス.
         - HALAL: 植物油脂, 大豆油, 菜種油, 小麦粉, 砂糖, 食塩, 植物性タンパク, 野菜エキス, 海藻エキス, 魚介エキス.
@@ -403,7 +420,7 @@ COUNTRY_RULES = {
         TARGET REGION: SOUTH KOREA.
         Header: 원재료명.
         - HARAM: 돼지고기, 돈지/라드, 햄, 베이컨, 젤라틴 (돼지), 쇠고기/닭고기 (unless Halal marked), 맛술 (Cooking wine), 청주, 주정 (Alcohol), 양조주, 동물성유지.
-        - SYUBHAH: 쇼트닝, 마가린, 유화제 (E471), 가공유지, 콜라겐, 효소제제.
+        - SYUBHAH: 쇼트닝, 마가린, 유화제 (E471), 가공유지, 콜라ゲン, 효소제제.
         """
     },
     "USA": {
@@ -426,6 +443,9 @@ COUNTRY_RULES = {
     }
 }
 
+# ============================================================================
+# Quick Reply Generators & Dynamic Flex Builder
+# ============================================================================
 def get_country_selection_menu():
     return QuickReply(items=[
         QuickReplyItem(action=MessageAction(label="🇯🇵 Japan", text="Country: Japan")),
@@ -492,6 +512,7 @@ def create_halal_flex_card(product_name, company_name, status, reason, items_tex
 
     body_contents = []
 
+    # Counter tag
     if item_no is not None and total_count is not None:
         counter_label = lang_data["counter_text"].format(total=total_count, item_no=item_no)
         body_contents.append({
@@ -509,6 +530,7 @@ def create_halal_flex_card(product_name, company_name, status, reason, items_tex
             ]
         })
 
+    # Product and Manufacturer name
     if product_name or company_name:
         prod_display = product_name if product_name else "Food Item"
         comp_display = f" | {company_name}" if company_name else ""
@@ -528,6 +550,7 @@ def create_halal_flex_card(product_name, company_name, status, reason, items_tex
             ]
         })
 
+    # Status and Reason
     body_contents.append({
         "type": "box",
         "layout": "vertical",
@@ -553,6 +576,7 @@ def create_halal_flex_card(product_name, company_name, status, reason, items_tex
         ]
     })
 
+    # Identified ingredients
     body_contents.append({
         "type": "box",
         "layout": "vertical",
@@ -576,6 +600,7 @@ def create_halal_flex_card(product_name, company_name, status, reason, items_tex
         ]
     })
 
+    # Halal Alternative Suggestions
     if alternatives_text and alternatives_text.strip():
         body_contents.append({
             "type": "box",
@@ -603,6 +628,7 @@ def create_halal_flex_card(product_name, company_name, status, reason, items_tex
             ]
         })
 
+    # Hadith and App Recommendation
     body_contents.extend([
         {
             "type": "separator",
@@ -696,9 +722,12 @@ def create_halal_flex_card(product_name, company_name, status, reason, items_tex
     }
     return FlexContainer.from_json(json.dumps(flex_json))
 
+# ============================================================================
+# Core Flask Endpoints & Message Handlers
+# ============================================================================
 @app.route("/", methods=['GET'])
 def index():
-    return f"Global Halal Food Checker Active with 1,342 Database Items Loaded ({len(LOCAL_DB)} indices)."
+    return f"JP/Global Halal Food Checker Engine Active. DB Index count: {len(LOCAL_DB)}"
 
 @app.route("/callback", methods=['POST'])
 def callback():
@@ -726,7 +755,7 @@ def handle_text_message(event):
     with ApiClient(configuration) as api_client:
         line_bot_api = MessagingApi(api_client)
 
-        # ১. হিস্ট্রি প্রদর্শন
+        # 1. History listing
         if text in ["show_history", "history", "হিস্ট্রি", "ইতিহাস", "履歴", "历史", "riwayat", "سجل"]:
             if not history_list:
                 line_bot_api.reply_message(
@@ -753,7 +782,7 @@ def handle_text_message(event):
             )
             return
 
-        # ২. নির্দিষ্ট নম্বরের আইটেম পুনরায় দেখা
+        # 2. Number recall: Re-render card on demand
         if raw_text.isdigit():
             target_idx = int(raw_text)
             if 1 <= target_idx <= len(history_list):
@@ -784,7 +813,7 @@ def handle_text_message(event):
                 )
                 return
 
-        # ৩. শেষ স্ক্যানের উপাদানের ব্যাখ্যা
+        # 3. Follow-up Explanation Micro-chat
         if text in ["explain_last_scan", "explain", "বিস্তারিত", "ব্যাখ্যা", "解説", "详细", "jelaskan"]:
             last_scan = user_last_scans.get(user_id)
             if last_scan:
@@ -808,7 +837,7 @@ def handle_text_message(event):
                 )
             return
 
-        # ৪. দেশ নির্বাচন ও স্বয়ংক্রিয় ভাষা রূপান্তর
+        # 4. Regional Selection with Automatic Language Alignment
         if raw_text.startswith("Country:"):
             chosen = raw_text.replace("Country:", "").strip().lower()
             if "china" in chosen:
@@ -839,7 +868,7 @@ def handle_text_message(event):
             )
             return
 
-        # ৫. ভাষা নির্বাচন
+        # 5. Language Selection Override
         if raw_text.startswith("Set:"):
             target = raw_text.replace("Set:", "").strip().lower()
             if "english" in target:
@@ -865,7 +894,7 @@ def handle_text_message(event):
             )
             return
 
-        # রিচ মেনু বাটন C: হারাম উপাদান
+        # Rich Menu Button C: Haram Ingredients
         if any(k in text for k in ["haram", "হারাম", "ハラーム", "非清真"]):
             country_haram_text = get_localized_country_text(current_country, "haram", current_lang)
             line_bot_api.reply_message(
@@ -873,7 +902,7 @@ def handle_text_message(event):
             )
             return
 
-        # রিচ মেনু বাটন D: সন্দেহজনক উপাদান
+        # Rich Menu Button D: Doubtful / Syubhah
         if any(k in text for k in ["syubhah", "doubtful", "সন্দেহ", "シュブハ", "存疑"]):
             country_syubhah_text = get_localized_country_text(current_country, "syubhah", current_lang)
             line_bot_api.reply_message(
@@ -881,7 +910,7 @@ def handle_text_message(event):
             )
             return
 
-        # রিচ মেনু বাটন E: শপিং টিপস
+        # Rich Menu Button E: Shopping Tips
         if any(k in text for k in ["tip", "কেনাকাটা", "tips", "贴士"]):
             country_tips_text = get_localized_country_text(current_country, "tips", current_lang)
             line_bot_api.reply_message(
@@ -889,7 +918,7 @@ def handle_text_message(event):
             )
             return
 
-        # রিচ মেনু বাটন F: গাইড ও তথ্য
+        # Rich Menu Button F: Guide & Verification Info
         if any(k in text for k in ["info", "guide", "সাহায্য", "তথ্য", "指南"]):
             country_info_text = get_localized_country_text(current_country, "info", current_lang)
             line_bot_api.reply_message(
@@ -897,7 +926,7 @@ def handle_text_message(event):
             )
             return
 
-        # রিচ মেনু বাটন B: দেশ ও ভাষা নির্বাচন
+        # Rich Menu Button B: Region & Language Selector
         if any(k in text for k in ["language", "ভাষা", "bahasa", "言語", "语言", "country", "দেশ", "国家"]):
             line_bot_api.reply_message(
                 ReplyMessageRequest(
@@ -912,7 +941,7 @@ def handle_text_message(event):
             )
             return
 
-        # রিচ মেনু বাটন A: ছবি তোলা
+        # Rich Menu Button A: Open Camera
         if any(k in text for k in ["take a photo", "camera", "ক্যামেরা", "scan", "ছবি", "相机", "拍照"]):
             line_bot_api.reply_message(
                 ReplyMessageRequest(
@@ -927,7 +956,7 @@ def handle_text_message(event):
             )
             return
 
-        # ডিফল্ট রিপ্লাই
+        # Default fallback guidance
         line_bot_api.reply_message(
             ReplyMessageRequest(
                 reply_token=event.reply_token,
@@ -940,7 +969,9 @@ def handle_text_message(event):
             )
         )
 
-# আপডেট করা এআই ইঞ্জিন
+# ============================================================================
+# Gemini Flash Vision Inference Engine (3.5 / 3.8 Multi-Tier Fallback)
+# ============================================================================
 def call_gemini_vision(prompt, image_b64):
     candidate_models = [
         "models/gemini-3.5-flash-lite",
@@ -956,7 +987,7 @@ def call_gemini_vision(prompt, image_b64):
         }],
         "generationConfig": {
             "temperature": 0.1,
-            "maxOutputTokens": 750,
+            "maxOutputTokens": 800,
             "response_mime_type": "application/json"
         }
     }
@@ -982,6 +1013,9 @@ def call_gemini_vision(prompt, image_b64):
 
     raise Exception(last_error)
 
+# ============================================================================
+# Image Message Inspection Pipeline
+# ============================================================================
 @handler.add(MessageEvent, message=ImageMessageContent)
 def handle_image_message(event):
     global user_languages, user_countries, user_last_scans, user_scan_history
@@ -994,6 +1028,7 @@ def handle_image_message(event):
             blob_api = MessagingApiBlob(api_client)
             raw_bytes = blob_api.get_message_content(event.message.id)
 
+        # Optimize image for memory efficiency and token speed
         img = Image.open(io.BytesIO(raw_bytes))
         img.thumbnail((500, 500))
         out_buf = io.BytesIO()
@@ -1005,11 +1040,10 @@ def handle_image_message(event):
 
         country_context = COUNTRY_RULES.get(selected_country, COUNTRY_RULES["Japan"])["haram_prompt"]
 
-        # CSV ডাটাবেস থেকে শীর্ষ কি-ওয়ার্ড রেফারেন্স প্রম্পটে যুক্ত করা
         csv_db_summary = f"""
-        Authoritative Local Dataset loaded ({len(LOCAL_DB)} verified items):
-        - Absolute Haram items sample: {', '.join(CSV_HARAM_KEYWORDS[:35])}
-        - High-Risk Syubhah/Verify additives & E-numbers sample: {', '.join(CSV_VERIFY_KEYWORDS[:35])}
+        Verified Dataset References loaded ({len(LOCAL_DB)} indices):
+        - Haram sample keywords: {', '.join(CSV_HARAM_KEYWORDS[:40])}
+        - High-Risk Syubhah/Verify additives & E-numbers sample: {', '.join(CSV_VERIFY_KEYWORDS[:40])}
         """
 
         prompt = f"""
