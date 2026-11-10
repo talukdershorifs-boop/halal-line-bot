@@ -4,6 +4,7 @@ import gc
 import json
 import time
 import base64
+import sqlite3
 import requests
 import pandas as pd
 from flask import Flask, request, abort
@@ -36,14 +37,171 @@ GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 configuration = Configuration(access_token=CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(CHANNEL_SECRET)
 
-# সেশন ট্র্যাকিং ডিকশনারি
+# সেশন ও ক্যাশিং
 user_languages = {}
 user_countries = {}
 user_last_scans = {}
-user_scan_history = {}
 
 # ============================================================================
-# CSV ডাটাবেস লোডার ও ফাস্ট ইনডেক্সিং
+# ১. পারসিস্টেন্ট SQLite ডাটাবেস ইনিশিয়ালাইজেশন (রিস্টার্টেও ডেটা সুরক্ষিত)
+# ============================================================================
+DB_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'halal_bot_storage.db')
+
+def init_db():
+    try:
+        conn = sqlite3.connect(DB_FILE)
+        cursor = conn.cursor()
+        # স্ক্যান হিস্ট্রি টেবিল
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS scan_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id TEXT,
+                product_name TEXT,
+                company_name TEXT,
+                status TEXT,
+                reason TEXT,
+                items TEXT,
+                allergens TEXT,
+                alternatives TEXT,
+                country TEXT,
+                barcode TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        # বারকোড ক্যাশ টেবিল (ইনস্ট্যান্ট রেসপন্স)
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS barcode_cache (
+                barcode TEXT PRIMARY KEY,
+                product_name TEXT,
+                company_name TEXT,
+                status TEXT,
+                reason TEXT,
+                items TEXT,
+                allergens TEXT,
+                alternatives TEXT,
+                country TEXT
+            )
+        ''')
+        # ফিডব্যাক লগ টেবিল
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS user_feedback (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id TEXT,
+                product_name TEXT,
+                feedback_type TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print(f"Database init error: {e}")
+
+init_db()
+
+def get_cached_barcode(barcode):
+    if not barcode:
+        return None
+    try:
+        conn = sqlite3.connect(DB_FILE)
+        cursor = conn.cursor()
+        cursor.execute("SELECT product_name, company_name, status, reason, items, allergens, alternatives, country FROM barcode_cache WHERE barcode = ?", (barcode,))
+        row = cursor.fetchone()
+        conn.close()
+        if row:
+            return {
+                "product_name": row[0],
+                "company_name": row[1],
+                "status": row[2],
+                "reason": row[3],
+                "items": row[4],
+                "allergens": row[5],
+                "alternatives": row[6],
+                "country": row[7]
+            }
+    except Exception as e:
+        print(f"Cache lookup error: {e}")
+    return None
+
+def save_barcode_cache(barcode, data, country):
+    if not barcode or len(barcode) < 6:
+        return
+    try:
+        conn = sqlite3.connect(DB_FILE)
+        cursor = conn.cursor()
+        cursor.execute('''
+            INSERT OR REPLACE INTO barcode_cache (barcode, product_name, company_name, status, reason, items, allergens, alternatives, country)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (barcode, data.get('product_name'), data.get('company_name'), data.get('status'), data.get('reason'), data.get('items'), data.get('allergens'), data.get('alternatives'), country))
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print(f"Cache save error: {e}")
+
+def save_scan_history(user_id, data, country, barcode=""):
+    try:
+        conn = sqlite3.connect(DB_FILE)
+        cursor = conn.cursor()
+        cursor.execute('''
+            INSERT INTO scan_history (user_id, product_name, company_name, status, reason, items, allergens, alternatives, country, barcode)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (user_id, data.get('product_name'), data.get('company_name'), data.get('status'), data.get('reason'), data.get('items'), data.get('allergens'), data.get('alternatives'), country, barcode))
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print(f"History save error: {e}")
+
+def get_user_history_list(user_id, limit=10):
+    records = []
+    try:
+        conn = sqlite3.connect(DB_FILE)
+        cursor = conn.cursor()
+        cursor.execute('''
+            SELECT id, product_name, company_name, status, reason, items, allergens, alternatives, country, barcode
+            FROM scan_history WHERE user_id = ? ORDER BY id DESC LIMIT ?
+        ''', (user_id, limit))
+        rows = cursor.fetchall()
+        conn.close()
+        for r in rows:
+            records.append({
+                "id": r[0],
+                "product_name": r[1],
+                "company_name": r[2],
+                "status": r[3],
+                "reason": r[4],
+                "items": r[5],
+                "allergens": r[6],
+                "alternatives": r[7],
+                "country": r[8],
+                "barcode": r[9]
+            })
+    except Exception as e:
+        print(f"History fetch error: {e}")
+    return records
+
+def get_user_total_scans(user_id):
+    try:
+        conn = sqlite3.connect(DB_FILE)
+        cursor = conn.cursor()
+        cursor.execute("SELECT COUNT(*) FROM scan_history WHERE user_id = ?", (user_id,))
+        count = cursor.fetchone()[0]
+        conn.close()
+        return count
+    except:
+        return 0
+
+def log_user_feedback(user_id, product_name, feedback_type):
+    try:
+        conn = sqlite3.connect(DB_FILE)
+        cursor = conn.cursor()
+        cursor.execute("INSERT INTO user_feedback (user_id, product_name, feedback_type) VALUES (?, ?, ?)", (user_id, product_name, feedback_type))
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print(f"Feedback log error: {e}")
+
+# ============================================================================
+# ২. CSV ডাটাবেস লোডার (১,৩৪২টি অনন্য উপাদান)
 # ============================================================================
 LOCAL_DB = {}
 CSV_HARAM_KEYWORDS = []
@@ -104,7 +262,7 @@ def load_ingredients_database():
 load_ingredients_database()
 
 # ============================================================================
-# বহুভাষিক ইন্টারফেস কনফিগারেশন
+# ৩. বহুভাষিক ইন্টারফেস কনফিগারেশন
 # ============================================================================
 I18N = {
     "English": {
@@ -114,6 +272,7 @@ I18N = {
         "label_reason": "Observation & Reason:",
         "label_items": "Detected Ingredients:",
         "label_alternatives": "💡 Recommended Halal Alternatives:",
+        "label_allergens": "⚠️ Allergen Alert:",
         "label_hadith_title": "📜 Warning from Hadith:",
         "hadith_text": "The Prophet ﷺ said: 'What is lawful is clear and what is unlawful is clear, and between them are matters that are doubtful... So he who guards against doubtful matters clears himself in regard to his religion and his honor.' [Sahih al-Bukhari: 52, Sahih Muslim: 1599]",
         "label_advice_title": "💡 Important Recommendation:",
@@ -125,6 +284,13 @@ I18N = {
         "select_country_first": "🌍 Please select your country or destination:",
         "btn_explain": "❓ Explain Ingredients",
         "btn_history": "📜 Scan History",
+        "btn_share": "📤 Share Result",
+        "btn_brand_guide": "🛒 Safe Brands Guide",
+        "btn_feedback_ok": "🎯 Accurate Info",
+        "btn_feedback_doubt": "🚩 Report / Review",
+        "feedback_ok_msg": "Thank you! Your feedback helps keep this platform accurate. 🌟",
+        "feedback_doubt_msg": "Noted! This product has been flagged for administrative review and double-checking. 🔍",
+        "blurry_error": "⚠️ The image is blurry or the ingredients text is unreadable. Please take a closer, well-lit photo of the ingredients list.",
         "history_title": "📋 Your Food Check History (Total: {count}):\n",
         "history_empty": "You have no food scan history yet. Send an ingredient image to start checking.",
         "history_hint": "\n👉 Type the item number (e.g. 1, 2) to view the full result card again.",
@@ -137,6 +303,7 @@ I18N = {
         "label_reason": "পর্যবেক্ষণ ও কারণ:",
         "label_items": "শনাক্তকৃত উপাদান:",
         "label_alternatives": "💡 হালাল বিকল্প সাজেশন:",
+        "label_allergens": "⚠️ অ্যালার্জি সতর্কতা:",
         "label_hadith_title": "📜 হাদিসের আলোকে সতর্কতা:",
         "hadith_text": "রাসূলুল্লাহ ﷺ বলেছেন: 'হালালও স্পষ্ট এবং হারামও স্পষ্ট। আর এ দুয়ের মাঝে রয়েছে বহু সন্দেহজনক বিষয়... যে ব্যক্তি সন্দেহজনক বিষয় থেকে নিজেকে বাঁচিয়ে রাখল, সে তার দ্বীন ও সম্মান রক্ষা করল।' [সহিহ বুখারি: ৫২, সহিহ মুসলিম: ১৫৯৯]",
         "label_advice_title": "💡 গুরুত্বপূর্ণ পরামর্শ:",
@@ -148,6 +315,13 @@ I18N = {
         "select_country_first": "🌍 প্রথমে আপনার অবস্থান বা ভ্রমণের দেশ নির্বাচন করুন:",
         "btn_explain": "❓ উপাদান বিস্তারিত জানাও",
         "btn_history": "📜 হিস্ট্রি তালিকা",
+        "btn_share": "📤 শেয়ার করুন",
+        "btn_brand_guide": "🛒 নিরাপদ ব্র্যান্ড তালিকা",
+        "btn_feedback_ok": "🎯 নির্ভুল তথ্য",
+        "btn_feedback_doubt": "🚩 সংশয় / রিভিউ",
+        "feedback_ok_msg": "ধন্যবাদ! আপনার ফিডব্যাক প্ল্যাটফর্মকে আরও নির্ভুল রাখবে। 🌟",
+        "feedback_doubt_msg": "আপনার সংশয় নোট করা হয়েছে! পণ্যটি এডমিন রিচেকের তালিকায় যোগ করা হলো। 🔍",
+        "blurry_error": "⚠️ ছবিটি অস্পষ্ট বা উপাদানের লেখা পড়া যাচ্ছে না। দয়া করে ভালো আলোতে সোজাভাবে উপাদানের স্পষ্ট ছবি তুলুন।",
         "history_title": "📋 আপনার চেক করা খাবারের ইতিহাস (মোট: {count}টি):\n",
         "history_empty": "আপনার এখনও কোনো খাবারের স্ক্যান ইতিহাস সংরক্ষিত নেই। উপাদানের ছবি পাঠিয়ে চেক করুন।",
         "history_hint": "\n👉 যে কোনো খাবারের বিস্তারিত কার্ড দেখতে তার নম্বর লিখে পাঠান (যেমন: 1, 2)।",
@@ -160,6 +334,7 @@ I18N = {
         "label_reason": "Alasan & Observasi:",
         "label_items": "Bahan Terdeteksi:",
         "label_alternatives": "💡 Alternatif Halal Disarankan:",
+        "label_allergens": "⚠️ Peringatan Alergen:",
         "label_hadith_title": "📜 Peringatan Hadits:",
         "hadith_text": "Rasulullah ﷺ bersabda: 'Sesungguhnya yang halal itu jelas dan yang haram itu jelas, dan di antara keduanya ada perkara-perkara syubhat... Barangsiapa menjauhi syubhat, maka ia telah membersihkan agama dan kehormatannya.' [HR. Bukhari: 52, Muslim: 1599]",
         "label_advice_title": "💡 Rekomendasi Penting:",
@@ -171,6 +346,13 @@ I18N = {
         "select_country_first": "🌍 Silakan pilih negara Anda terlebih dahulu:",
         "btn_explain": "❓ Jelaskan Bahan",
         "btn_history": "📜 Riwayat Cek",
+        "btn_share": "📤 Bagikan Hasil",
+        "btn_brand_guide": "🛒 Panduan Brand Aman",
+        "btn_feedback_ok": "🎯 Informasi Akurat",
+        "btn_feedback_doubt": "🚩 Laporkan / Tinjau",
+        "feedback_ok_msg": "Terima kasih! Umpan balik Anda membantu menjaga keakuratan bot ini. 🌟",
+        "feedback_doubt_msg": "Laporan diterima! Produk ini telah dicatat untuk ditinjau ulang oleh tim. 🔍",
+        "blurry_error": "⚠️ Foto kurang jelas atau teks komposisi tidak terbaca. Harap ambil foto ulang dengan pencahayaan yang baik.",
         "history_title": "📋 Riwayat Pemeriksaan Makanan (Total: {count}):\n",
         "history_empty": "Belum ada riwayat pemeriksaan makanan tersimpan. Kirim foto bahan untuk memulai.",
         "history_hint": "\n👉 Ketik nomor item (misal: 1, 2) untuk melihat kartu hasil lengkap kembali.",
@@ -183,6 +365,7 @@ I18N = {
         "label_reason": "判断原因与分析:",
         "label_items": "检测到的主要配料:",
         "label_alternatives": "💡 推荐清真替代品:",
+        "label_allergens": "⚠️ 过敏原警示:",
         "label_hadith_title": "📜 圣训警示:",
         "hadith_text": "先知穆罕默德 ﷺ 说：‘合法的（清真）是明白的，非法的也是明白的，在这两者之间有许多疑似的事物...避开疑似事物的人，确已保全了他的宗教和名节。’ [布哈里圣训: 52, 穆斯林圣训: 1599]",
         "label_advice_title": "💡 重要建议:",
@@ -194,6 +377,13 @@ I18N = {
         "select_country_first": "🌍 请先选择您所在的国家或目的地:",
         "btn_explain": "❓ 详细成分分析",
         "btn_history": "📜 检查历史",
+        "btn_share": "📤 分享结果",
+        "btn_brand_guide": "🛒 安全品牌指南",
+        "btn_feedback_ok": "🎯 信息准确",
+        "btn_feedback_doubt": "🚩 存疑 / 复核",
+        "feedback_ok_msg": "感谢您的反馈！您的支持帮助我们维护更准确的数据。🌟",
+        "feedback_doubt_msg": "已记录您的反馈！该商品已提交人工复核通道。🔍",
+        "blurry_error": "⚠️ 照片模糊或配料文字无法清晰识别。请在光线良好处重新平整拍摄配料表。",
         "history_title": "📋 您的食品检查历史记录 (总计: {count}):\n",
         "history_empty": "暂无检查记录。请拍摄并发送食品配料表照片开始使用。",
         "history_hint": "\n👉 发送对应编号（如：1, 2）可重新查看完整结果卡片。",
@@ -206,6 +396,7 @@ I18N = {
         "label_reason": "判定理由・観察:",
         "label_items": "検出された原材料:",
         "label_alternatives": "💡 推奨されるハラール代替品:",
+        "label_allergens": "⚠️ アレルギー注意:",
         "label_hadith_title": "📜 ハディースによる教え:",
         "hadith_text": "預言者ムハンマド ﷺ は仰いました:『合法（ハラール）なものは明白であり、非合法（ハラーム）なものも明白である。そして両者の間には疑わしい事柄がある...疑わしいものを避ける者は、自らの宗教と名誉を守ることになる。』[サヒーフ・ブハーリー: 52, サヒーフ・ムスリム: 1599]",
         "label_advice_title": "💡 重要なお知らせ:",
@@ -217,6 +408,13 @@ I18N = {
         "select_country_first": "🌍 まず対象の国を選択してください:",
         "btn_explain": "❓ 成分の詳細解説",
         "btn_history": "📜 履歴一覧",
+        "btn_share": "📤 結果を共有",
+        "btn_brand_guide": "🛒 安全商品ガイド",
+        "btn_feedback_ok": "🎯 正確な情報",
+        "btn_feedback_doubt": "🚩 疑義 / 再確認",
+        "feedback_ok_msg": "フィードバックありがとうございます！正確な情報維持に役立てられます。🌟",
+        "feedback_doubt_msg": "承知いたしました！該当製品を管理者の再確認対象として登録しました。🔍",
+        "blurry_error": "⚠️ 画像が不鮮明か原材料の文字が読み取れませんでした。明るい場所で正面から再度撮影してください。",
         "history_title": "📋 食品判定履歴 (合計: {count}件):\n",
         "history_empty": "まだ履歴がありません。原材料の写真を送信して判定を開始してください。",
         "history_hint": "\n👉 番号（例: 1, 2）を送信すると、詳細結果を再確認できます。",
@@ -229,6 +427,7 @@ I18N = {
         "label_reason": "الملاحظة والسبب:",
         "label_items": "المكونات المكتشفة:",
         "label_alternatives": "💡 البدائل الحلال المقترحة:",
+        "label_allergens": "⚠️ تنبيه مسببات الحساسية:",
         "label_hadith_title": "📜 التحذير النبوي الشريف:",
         "hadith_text": "قال رسول الله ﷺ: 'إن الحلال بيّن وإن الحرام بيّن، وبينهما أمور مشتبهات... فمن اتقى الشبهات فقد استبرأ لدينه وعِرضه.' [صحيح البخاري: ٥٢، صحيح مسلم: ١٥٩٩]",
         "label_advice_title": "💡 نصيحة هامة:",
@@ -240,6 +439,13 @@ I18N = {
         "select_country_first": "🌍 يرجى اختيار الدولة أولاً:",
         "btn_explain": "❓ تفاصيل المكونات",
         "btn_history": "📜 سجل الفحص",
+        "btn_share": "📤 مشاركة النتيجة",
+        "btn_brand_guide": "🛒 دليل العلامات الآمنة",
+        "btn_feedback_ok": "🎯 معلومات دقيقة",
+        "btn_feedback_doubt": "🚩 شك / مراجعة",
+        "feedback_ok_msg": "شكراً لك! يساعدنا تقييمك في تحسين دقة المنصة. 🌟",
+        "feedback_doubt_msg": "تم تسجيل ملاحظتك! سيتم فحص هذا المنتج والتحقق منه من قبل المشرفين. 🔍",
+        "blurry_error": "⚠️ الصورة غير واضحة أو يتعذر قراءة قائمة المكونات. يرجى إعادة التقاط الصورة بوضوح وإضاءة جيدة.",
         "history_title": "📋 سجل فحص الأطعمة الخاص بك (الإجمالي: {count}):\n",
         "history_empty": "لا يوجد سجل فحص حتى الآن. يرجى إرسال صورة للمكونات للبدء.",
         "history_hint": "\n👉 أرسل رقم العنصر (مثال: 1, 2) لإعادة عرض بطاقة النتيجة التفصيلية.",
@@ -248,8 +454,48 @@ I18N = {
 }
 
 # ============================================================================
-# সম্পূর্ণ দেশভিত্তিক তথ্য ভাণ্ডার (Indonesia সহ ৬টি দেশ)
+# ৪. দেশভিত্তিক তথ্য ও রেডিমেড হালাল ব্র্যান্ড গাইড
 # ============================================================================
+SAFE_BRAND_GUIDES = {
+    "Japan": """🛒 [Japan 🇯🇵] জনপ্রিয় নিরাপদ হালাল ও প্ল্যান্ট-বেসড ব্র্যান্ড:
+• চকলেট: Meiji Milk Chocolate (Standard red pack), Lotte Ghana Black
+• পাউরুটি: Pasco Chojuku (超熟 - 100% উদ্ভিজ্জ তেল)
+• চিপস: Calbee Potato Chips Usushio (うすしお味 - শুধু লবণ ও আলু)
+• নুডুলস: Halal Certified Samyang Buldak (Japan Edition)
+• সয়া সস: Kikkoman Halal Gluten-Free Soy Sauce""",
+
+    "USA": """🛒 [USA 🇺🇸] Certified Halal & Kosher Pareve Brands:
+• Bread: Dave's Killer Bread, Nature's Own 100% Whole Wheat
+• Snacks: Lay's Classic Potato Chips, Fritos Original
+• Cookies: Oreo Original (No animal fat, dairy/alcohol free)
+• Sauce: Heinz Tomato Ketchup (Certified Kosher/Pareve)
+• Ice Cream: Ben & Jerry's (Kosher certified varieties)""",
+
+    "China": """🛒 [China 🇨🇳] 常用推荐清真与安全品牌:
+• 调味品: 驻马店清真十三香、老干妈香辣脆油辣椒
+• 方便食品: 康师傅清真系列牛肉面、统一清真方便面
+• 零食: 三只松鼠每日坚果 (原味)、恰恰原味香瓜子
+• 饮料/乳品: 蒙牛纯牛奶 (伊协清真标)、伊利纯牛奶""",
+
+    "Korea": """🛒 [Korea 🇰🇷] Verified Halal & Muslim-Friendly Items:
+• Ramyun: Samyang Buldak (KMF Halal Certified Green Logo)
+• Seaweed: CJ Bibigo Roasted Seaweed (Olive oil & salt)
+• Snacks: Orion Choco Pie (Halal export edition only)
+• Milk: Binggrae Banana Flavored Milk (Halal certified batch)""",
+
+    "Indonesia": """🛒 [Indonesia 🇮🇩] Brand Terverifikasi Halal BPJPH/MUI:
+• Mi Instan: Indomie (Semua varian berlogo Halal resmi BPJPH)
+• Biskuit/Roti: Sari Roti, Khong Guan Biscuit
+• Minuman: Ultra Milk, Teh Botol Sosro
+• Bumbu: Bumbu Racik Indofood, Saus Sambal ABC""",
+
+    "Bangladesh": """🛒 [Bangladesh 🇧🇩] স্বীকৃত নিরাপদ ব্র্যান্ড গাইড:
+• বিস্কুট: প্রাণ অল-টাইম, অলিম্পিক এনার্জি প্লাস
+• দুগ্ধজাত: মিল্ক ভিটা, আড়ং ডেইরি মিল্ক
+• তেল ও মসলা: রাঁধুনী পিওর মসলা, রূপচাঁদা সয়াবিন তেল
+• স্ন্যাকস: বম্বে সুইটস পটেটো ক্র্যাকার্স"""
+}
+
 COUNTRY_DETAILS = {
     "Indonesia": {
         "title": "ID HALAL FOOD CHECKER 🇮🇩",
@@ -260,10 +506,10 @@ COUNTRY_DETAILS = {
             "Chinese": "在印度尼西亚，请优先选购带有官方BPJPH清真标识的商品，或通过Halal MUI官方平台核实。"
         },
         "haram": {
-            "English": "🚫 [Indonesia 🇮🇩] Haram Ingredients:\n• Babi, Daging Babi, Lemak Babi (Pork & Lard)\n• Ham, Bacon, Gelatin Babi (Pork Gelatin)\n• Darah, Saren / Marus (Congealed animal blood)\n• Alkohol, Minuman Beralkohol, Rum, Angciu (Chinese cooking wine)\n• Mirin beralkohol, Arak masak",
-            "Bengali": "🚫 [ইন্দোনেশিয়া 🇮🇩] নিশ্চিত হারাম উপাদান:\n• Babi, Daging Babi | শুকরের মাংস\n• Lemak Babi, Lard | শুকরের চর্বি\n• Saren, Marus | জমাট বাঁধা রক্তের খাবার\n• Angciu, Arak masak | চাইনিজ রান্নার অ্যালকোহলীয় মদ\n• Rum, Mirin beralkohol | অ্যালকোহল ও রান্নার মদ",
-            "Indonesian": "🚫 [Indonesia 🇮🇩] Bahan Pasti Haram:\n• Daging Babi, Lemak Babi (Lard), Porcine\n• Ham, Bacon, Gelatin Babi\n• Saren / Marus / Didih (Darah beku hewan)\n• Angciu (Arak Merah masak), Mirin beralkohol\n• Rum, Ekstrak rasa mengandung alkohol tinggi\n• Daging sapi/ayam tanpa sertifikasi sembelihan halal",
-            "Chinese": "🚫 [印尼 🇮🇩] 严禁成分 (Haram):\n• 猪肉 (Daging Babi)、猪油 (Lemak Babi / Lard)\n• 猪明胶 (Gelatin Babi)、培根、火腿\n• 动物血制品 (Saren / Marus)\n• 料理红酒/料酒 (Angciu)、含酒精味霖 (Mirin)\n• 朗姆酒 (Rum)、未经验证的肉类提取物"
+            "English": "🚫 [Indonesia 🇮🇩] Haram Ingredients:\n• Babi, Daging Babi, Lemak Babi (Pork & Lard)\n• Ham, Bacon, Gelatin Babi (Pork Gelatin)\n• Darah, Saren / Marus (Congealed animal blood)\n• Alkohol, Minuman Beralkohol, Rum, Angciu (Cooking wine)\n• Mirin beralkohol, Arak masak",
+            "Bengali": "🚫 [ইন্দোনেশিয়া 🇮🇩] নিশ্চিত হারাম উপাদান:\n• Babi, Daging Babi | শুকরের মাংস\n• Lemak Babi, Lard | শুকরের চর্বি\n• Saren, Marus | জমাট বাঁধা রক্তের খাবার\n• Angciu, Arak masak | চাইনিজ রান্নার অ্যালকোহলীয় মদ\n• Rum, Mirin beralkohol | অ্যালকোহল ও মদ",
+            "Indonesian": "🚫 [Indonesia 🇮🇩] Bahan Pasti Haram:\n• Daging Babi, Lemak Babi (Lard), Porcine\n• Ham, Bacon, Gelatin Babi\n• Saren / Marus / Didih (Darah beku hewan)\n• Angciu (Arak Merah masak), Mirin beralkohol\n• Rum, Ekstrak rasa mengandung alkohol tinggi",
+            "Chinese": "🚫 [印尼 🇮🇩] 严禁成分 (Haram):\n• 猪肉 (Daging Babi)、猪油 (Lemak Babi / Lard)\n• 猪明胶 (Gelatin Babi)、培根、火腿\n• 动物血制品 (Saren / Marus)\n• 料理红酒/料酒 (Angciu)、含酒精味霖 (Mirin)"
         },
         "syubhah": {
             "English": "⚠️ [Indonesia 🇮🇩] Syubhah (Doubtful):\n• Emulsifier / Pengemulsi (E471, E472) - without vegetable statement\n• Shortening / Mentega Putih (animal-fat risk)\n• Gelatin, Kolagen (unspecified origin)\n• Perisa Alami / Artifisial (unspecified alcohol solvent)",
@@ -272,16 +518,16 @@ COUNTRY_DETAILS = {
             "Chinese": "⚠️ [印尼 🇮🇩] 存疑成分 (Syubhah):\n• 乳化剂 (Pengemulsi / E471) - 未标明植物来源\n• 起酥油 (Mentega Putih / Shortening)\n• 明胶、胶原蛋白 (未标明鱼类或清真牛源)\n• 食用香精 (可能含酒精溶剂)"
         },
         "tips": {
-            "English": "🛒 [Indonesia 🇮🇩] Shopping Tips:\n1. Look for the official Purple 'Halal Indonesia' (BPJPH) Gunungan logo.\n2. In local Chinese restaurants or imported stalls, beware of dishes with 'Babi' or 'Non-Halal' labels.\n3. Check imported snacks (Korean/Japanese) carefully as they may lack local Halal certification.",
-            "Bengali": "🛒 [ইন্দোনেশিয়া 🇮🇩] কেনাকাটার টিপস:\n১. প্যাকেটের গায়ে বেগুনী রঙের সরকারি 'Halal Indonesia' (BPJPH) লোগো দেখে নিন।\n২. চাইনিজ বা স্থানীয় খাবার দোকানে 'Babi' বা 'Non-Halal' সাইনবোর্ড আছে কি না খেয়াল রাখুন।\n৩. কোরিয়ান বা জাপানি আমদানিকৃত স্ন্যাকসে স্থানীয় হালাল সিল না থাকলে উপাদান পরীক্ষা করুন।",
-            "Indonesian": "🛒 [Indonesia 🇮🇩] Tips Belanja Aman:\n1. Pastikan terdapat logo resmi Halal Indonesia (Gunungan warna ungu) dari BPJPH.\n2. Waspadai produk impor (Jepang/Korea/China) yang belum memiliki nomor registrasi BPJPH.\n3. Periksa restoran non-halal dengan label 'Non-Halal' atau menu bertuliskan 'Babi/Pork'.",
-            "Chinese": "🛒 [印尼 🇮🇩] 购物指南:\n1. 认准印尼宗教部BPJPH官方紫色‘Halal Indonesia’印章。\n2. 进口中日韩休闲零食若无本地Halal认证编号，须仔细甄别。\n3. 外食时留意餐馆是否有明确的‘Non-Halal (非清真)’或‘Babi’警示。"
+            "English": "🛒 [Indonesia 🇮🇩] Shopping Tips:\n1. Look for the official Purple 'Halal Indonesia' (BPJPH) Gunungan logo.\n2. In local Chinese restaurants, beware of dishes with 'Babi' or 'Non-Halal' labels.\n3. Check imported snacks (Korean/Japanese) carefully as they may lack local Halal certification.",
+            "Bengali": "🛒 [ইন্দোনেশিয়া 🇮🇩] কেনাকাটার টিপস:\n১. প্যাকেটের গায়ে বেগুনী রঙের সরকারি 'Halal Indonesia' (BPJPH) লোগো দেখে নিন।\n২. চাইনিজ দোকানে 'Babi' বা 'Non-Halal' সাইনবোর্ড আছে কি না খেয়াল রাখুন।\n৩. কোরিয়ান বা জাপানি আমদানিকৃত স্ন্যাকসে স্থানীয় হালাল সিল না থাকলে উপাদান পরীক্ষা করুন।",
+            "Indonesian": "🛒 [Indonesia 🇮🇩] Tips Belanja Aman:\n1. Pastikan terdapat logo resmi Halal Indonesia (Gunungan warna ungu) dari BPJPH.\n2. Waspadai produk impor yang belum memiliki nomor registrasi BPJPH.\n3. Periksa restoran non-halal dengan label 'Non-Halal' atau menu bertuliskan 'Babi/Pork'.",
+            "Chinese": "🛒 [印尼 🇮🇩] 购物指南:\n1. 认准印尼宗教部BPJPH官方紫色‘Halal Indonesia’印章。\n2. 进口中日韩休闲零食若无本地Halal认证编号，须仔细甄别。"
         },
         "info": {
-            "English": "ℹ️ [Indonesia 🇮🇩] Guide:\n• Take a clear picture of the 'Komposisi' (Ingredients) list on the back of the package.\n• All food circulated in Indonesia is legally required to hold Halal certification or clearly declare Non-Halal.",
+            "English": "ℹ️ [Indonesia 🇮🇩] Guide:\n• Take a clear picture of the 'Komposisi' (Ingredients) list on the package.\n• All food circulated in Indonesia is legally required to hold Halal certification or clearly declare Non-Halal.",
             "Bengali": "ℹ️ [ইন্দোনেশিয়া 🇮🇩] নির্দেশিকা:\n• প্যাকেটের উল্টো পাশের 'Komposisi' (উপাদান) অংশের স্পষ্ট ছবি তুলুন।\n• ইন্দোনেশিয়ার আইন অনুযায়ী সব খাদ্য হয় হালাল সার্টিফায়েড হবে অথবা স্পষ্ট 'Non-Halal' লেখা থাকবে।",
-            "Indonesian": "ℹ️ [Indonesia 🇮🇩] Panduan:\n• Foto bagian 'Komposisi' bahan secara tegak dan jelas.\n• Berdasarkan UU JPH, semua produk makanan yang beredar wajib bersertifikat halal atau mencantumkan label non-halal secara tegas.",
-            "Chinese": "ℹ️ [印尼 🇮🇩] 指南:\n• 请正对食品包装背面的‘Komposisi’（配料表）部分拍照。\n• 印尼法律要求流通食品必须通过清真认证或有清晰非清真标识。"
+            "Indonesian": "ℹ️ [Indonesia 🇮🇩] Panduan:\n• Foto bagian 'Komposisi' bahan secara tegak dan jelas.\n• Berdasarkan UU JPH, semua produk makanan wajib bersertifikat halal atau mencantumkan label non-halal secara tegas.",
+            "Chinese": "ℹ️ [印尼 🇮🇩] 指南:\n• 请正对食品包装背面的‘Komposisi’（配料表）部分拍照。"
         }
     },
     "Japan": {
@@ -294,7 +540,7 @@ COUNTRY_DETAILS = {
         },
         "haram": {
             "English": "🚫 [Japan 🇯🇵] Haram Ingredients:\n• 豚肉, ポーク (Pork)\n• 豚脂, ラード (Pork Fat / Lard)\n• ハム, ベーコン, 豚骨エキス (Ham, Bacon, Pork bone extract)\n• 豚ゼラチン (Pork gelatin)\n• 牛肉, 鶏肉 (Non-halal beef/chicken)\n• 動物性油脂, 混合油脂 (Animal fats)\n• アルコール, 洋酒, 酒精 (Alcohol, Spirits)\n• 酒, 清酒, 料理酒, 味醂 (Mirin / Cooking Sake)",
-            "Bengali": "🚫 [জাপান 🇯🇵] নিশ্চিত হারাম উপাদান:\n• 豚肉、ポーク | শুকরের মাংস\n• 豚脂肪、豚脂、ラード | শুকরের চর্বি / লার্ড\n• ハム、ベーコン、豚骨エキス | হ্যাম, বেকন, শুকরের হাড়ের স্যুপ/নির্যাস\n• 豚ゼラチン | শুকরের জেলাটিন\n• 動物性油脂、混合油脂 | সাধারণ প্রাণিজ চর্বি\n• アルコール、洋酒、酒精 | অ্যালকোহল, সুরা\n• 酒、清酒、料理酒、味醂 (みりん) | রান্নার মদ, মিরিন",
+            "Bengali": "🚫 [জাপান 🇯🇵] নিশ্চিত হারাম উপাদান:\n• 豚肉、ポーク | শুকরের মাংস\n• 豚脂肪、豚脂、ラード | শুকরের চর্বি / লার্ড\n• ハム、ベーコン、豚骨エキス | হ্যাম, বেকন, শুকরের হাড়ের নির্যাস\n• 豚ゼラチン | শুকরের জেলাটিন\n• 動物性油脂、混合油脂 | সাধারণ প্রাণিজ চর্বি\n• アルコール、洋酒、酒精 | অ্যালকোহল, মদ\n• 酒、清酒、料理酒、味醂 (みりん) | রান্নার মদ, মিরিন",
             "Chinese": "🚫 [日本 🇯🇵] 严禁成分 (Haram):\n• 豚肉、ポーク (猪肉)\n• 豚脂、ラード (猪油/白油)\n• ハム、ベーコン、豚骨エキス (火腿、培根、猪骨提取物)\n• 豚ゼラチン (猪明胶)\n• 牛肉、鶏肉 (未经清真屠宰的肉类)\n• 動物性油脂、混合油脂 (动物油脂)\n• アルコール、洋酒、酒精 (酒精、食用酒精)\n• 酒、料理酒、味醂/みりん (日本料理酒、味霖)"
         },
         "syubhah": {
@@ -318,26 +564,26 @@ COUNTRY_DETAILS = {
         "advice_app": {
             "English": "This bot is a free AI tool. For 100% verified certainty in the USA, consider checking with apps like 'Scan Halal' or 'Crescent Halal'.",
             "Bengali": "আমাদের এই বটটি একটি ফ্রি এআই টুল। যুক্তরাষ্ট্রে ১০০% নির্ভুলতার জন্য 'Scan Halal' অথবা 'Crescent Halal' অ্যাপ ব্যবহার করুন।",
-            "Chinese": "本机器人为免费AI工具。在美国获取100%认证信息，建议参考『Scan Halal』或伊斯兰食品营养委员会(IFANCA)认证。"
+            "Chinese": "本机器人为免费AI工具。在美国获取100%认证信息，建议参考『Scan Halal』或IFANCA认证。"
         },
         "haram": {
-            "English": "🚫 [USA 🇺🇸] Haram Ingredients:\n• Pork, Bacon, Ham, Pork Lard\n• Pork Gelatin / Animal Gelatin\n• Carmine / Cochineal Extract (E120)\n• Pure Vanilla Extract (Contains 35%+ alcohol by FDA law)\n• Brewer's Yeast (from beer brewing)\n• Cooking wines, Rum flavorings, Wine vinegars",
-            "Bengali": "🚫 [USA 🇺🇸] নিশ্চিত হারাম উপাদান:\n• Pork, Bacon, Ham, Pork Lard | শুকর ও চর্বি\n• Pork Gelatin / Gelatin (অ-হালাল উৎস)\n• Carmine / Cochineal Extract (E120) | লাল পোকার রঙ\n• Pure Vanilla Extract (আইন অনুযায়ী ৩৫%+ অ্যালকোহল থাকে)\n• Brewer's Yeast (বিয়ার তৈরির ইস্ট)\n• Cooking wines, Rum flavorings",
+            "English": "🚫 [USA 🇺🇸] Haram Ingredients:\n• Pork, Bacon, Ham, Pork Lard\n• Pork Gelatin / Animal Gelatin\n• Carmine / Cochineal Extract (E120)\n• Pure Vanilla Extract (Contains 35%+ alcohol by FDA law)\n• Brewer's Yeast (from beer brewing)\n• Cooking wines, Rum flavorings",
+            "Bengali": "🚫 [USA 🇺🇸] নিশ্চিত হারাম উপাদান:\n• Pork, Bacon, Ham, Lard | শুকর ও চর্বি\n• Pork Gelatin / Gelatin (অ-হালাল উৎস)\n• Carmine / Cochineal Extract (E120) | লাল পোকার রঙ\n• Pure Vanilla Extract (৩৫%+ অ্যালকোহল থাকে)\n• Wine, Rum flavoring",
             "Chinese": "🚫 [美国 🇺🇸] 严禁成分 (Haram):\n• 猪肉、培根、火腿、猪油 (Pork, Bacon, Lard)\n• 猪明胶 (Pork Gelatin)\n• 胭脂红/胭脂虫红 (Carmine / E120)\n• 纯香草精 (Pure Vanilla Extract - FDA规定含35%以上酒精)\n• 啤酒酵母 (Brewer's Yeast)\n• 料理酒、含酒精香精"
         },
         "syubhah": {
-            "English": "⚠️ [USA 🇺🇸] Syubhah (Doubtful):\n• Mono and diglycerides (E471)\n• Shortening (unless marked 100% vegetable)\n• Whey powder / Animal Rennet in Cheese\n• Natural & Artificial Flavors (alcohol carriers)\n• Enzymes (Lipase, Pepsin)",
-            "Bengali": "⚠️ [USA 🇺🇸] সন্দেহজনক উপাদান (Syubhah):\n• Mono and diglycerides (E471) - উৎস অস্পষ্ট হলে\n• Shortening (ভেজিটেবল পরিষ্কার না হলে)\n• Whey powder / Rennet in Cheese (প্রাণিজ রেনেট)\n• Enzymes (Lipase, Pepsin)\n• Natural & Artificial Flavors",
+            "English": "⚠️ [USA 🇺🇸] Syubhah (Doubtful):\n• Mono and diglycerides (E471)\n• Shortening (unless marked 100% vegetable)\n• Whey powder / Animal Rennet in Cheese\n• Natural & Artificial Flavors (alcohol carriers)",
+            "Bengali": "⚠️ [USA 🇺🇸] সন্দেহজনক উপাদান (Syubhah):\n• Mono and diglycerides (E471)\n• Shortening\n• Whey powder / Animal Rennet\n• Natural & Artificial Flavors",
             "Chinese": "⚠️ [美国 🇺🇸] 存疑成分 (Syubhah):\n• 单双甘油酯 (E471 - 动植物来源不明)\n• 起酥油 (Shortening - 未注明全植物)\n• 乳清粉/奶酪动物凝乳酶 (Rennet)\n• 天然与人工香精 (可能使用酒精作为溶剂)"
         },
         "tips": {
-            "English": "🛒 [USA 🇺🇸] Shopping Tips:\n1. Look for 'Kosher Pareve' (OU Pareve) which guarantees meat & alcohol free.\n2. Check gummy candies and marshmallows for Pork Gelatin.\n3. Buy '100% Vegetable Shortening' for baking.",
-            "Bengali": "🛒 [USA 🇺🇸] কেনাকাটার টিপস:\n১. Kosher Pareve (OU Pareve) সিল থাকলে মাংস ও অ্যালকোহলমুক্ত থাকে।\n২. মার্শমেলো, গামি ক্যান্ডিতে Gelatin থাকে যা অধিকাংশ ক্ষেত্রে শুকর থেকে আসে।\n৩. পাউরুটি কেনার সময় '100% Plant Based' লেখা খুঁজুন।",
-            "Chinese": "🛒 [美国 🇺🇸] 购物小贴士:\n1. 认准‘Kosher Pareve’(正统犹太素食洁食)标识，不含肉类和酒精。\n2. 棉花糖、软糖通常含猪明胶，请特别注意。\n3. 烘焙食品认准‘100% Vegetable Shortening’。"
+            "English": "🛒 [USA 🇺🇸] Shopping Tips:\n1. Look for 'Kosher Pareve' (OU Pareve) which guarantees meat/alcohol free.\n2. Check gummy candies and marshmallows for Pork Gelatin.\n3. Buy '100% Vegetable Shortening' for baking.",
+            "Bengali": "🛒 [USA 🇺🇸] কেনাকাটার টিপস:\n১. Kosher Pareve সিল থাকলে মাংস ও অ্যালকোহলমুক্ত থাকে।\n২. মার্শমেলো ও গামিতে জেলাটিন চেক করুন।",
+            "Chinese": "🛒 [美国 🇺🇸] 购物小贴士:\n1. 认准‘Kosher Pareve’(正统犹太素食洁食)标识，不含肉类和酒精。\n2. 棉花糖、软糖通常含猪明胶，请特别注意。"
         },
         "info": {
             "English": "ℹ️ [USA 🇺🇸] Guide:\n• Take a clear picture of the 'Ingredients' section on the FDA nutrition label.",
-            "Bengali": "ℹ️ [USA 🇺🇸] নির্দেশিকা:\n• প্যাকেটের 'Ingredients' অংশের সোজা ও পরিষ্কার ছবি স্ক্যান করুন।",
+            "Bengali": "ℹ️ [USA 🇺🇸] নির্দেশিকা:\n• প্যাকেটের 'Ingredients' অংশের সোজা ছবি স্ক্যান করুন।",
             "Chinese": "ℹ️ [美国 🇺🇸] 指南:\n• 请清晰拍摄FDA营养标签下方的‘Ingredients’部分。"
         }
     },
@@ -349,23 +595,23 @@ COUNTRY_DETAILS = {
             "Chinese": "本机器人为免费AI工具。在中国境内选购食品，请认准中国伊斯兰教协会或各省市伊协认证的‘清真 (Halal)’标志。"
         },
         "haram": {
-            "English": "🚫 [China 🇨🇳] Haram Ingredients:\n• 猪肉, 猪油, 猪脂 (Pork & Lard)\n• 猪血, 鸭血, 血旺 (Blood curds)\n• 料酒, 黄酒, 白酒 (Cooking wine & Liquor)\n• 鸡精, 浓汤宝 (Non-halal broths)\n• 明胶, 阿胶 (Gelatin & Donkey-hide gelatin)",
-            "Bengali": "🚫 [চীন 🇨🇳] নিশ্চিত হারাম উপাদান:\n• 猪肉、猪油、猪脂 | শুকরের মাংস ও চর্বি\n• 猪皮、火腿、培根 | শুকরের চামড়া, হ্যাম, বেকন\n• 猪血、鸭血、血旺 | রক্ত দিয়ে তৈরি খাবার\n• 料酒、黄酒、白酒 | চীনা রান্নার ওয়াইন/মদ\n• 鸡精、浓汤宝 (অ-হালাল ব্রোথ)",
+            "English": "🚫 [China 🇨🇳] Haram Ingredients:\n• 猪肉, 猪油, 猪脂 (Pork & Lard)\n• 猪血, 鸭血 (Blood curds)\n• 料酒, 黄酒, 白酒 (Cooking wine & Liquor)\n• 鸡精, 浓汤宝 (Non-halal broths)\n• 明胶, 阿胶 (Gelatin & Donkey-hide gelatin)",
+            "Bengali": "🚫 [চীন 🇨🇳] নিশ্চিত হারাম উপাদান:\n• 猪肉、猪油 (শুকরের মাংস ও চর্বি)\n• 猪血、鸭血 (রক্তজাত খাবার)\n• 料酒、黄酒、白酒 (চীনা রান্নার মদ)\n• 鸡精、浓汤宝 (অ-হালাল ব্রোথ)",
             "Chinese": "🚫 [中国 🇨🇳] 严禁成分 (Haram):\n• 猪肉、猪油、猪脂、猪皮、猪肉浸膏\n• 猪血、鸭血、血旺等血液制品\n• 料酒、黄酒、白酒、花雕酒、米酒、食用酒精\n• 非清真鸡精、鸡汁、浓汤宝\n• 明胶、阿胶 (驴皮胶)"
         },
         "syubhah": {
-            "English": "⚠️ [China 🇨🇳] Syubhah (Doubtful):\n• 起酥油 (Shortening)\n• 人造奶油, 人造黄油 (Margarine)\n• 乳化剂 (Emulsifier / E471)\n• 食用香精 (Flavors with alcohol carriers)",
-            "Bengali": "⚠️ [চীন 🇨🇳] সন্দেহজনক উপাদান (Syubhah):\n• 起酥油 (শর্টনিং) - প্রাণিজ ফ্যাটের মিশ্রণ থাকতে পারে\n• 人造奶油、人造黄油 (মার্জারিন)\n• 乳化剂 (ইমালসিফায়ার E471)\n• 食用香精 (ফ্লেভারিং)",
+            "English": "⚠️ [China 🇨🇳] Syubhah (Doubtful):\n• 起酥油 (Shortening)\n• 人造奶油, 人造黄油 (Margarine)\n• 乳化剂 (Emulsifier / E471)\n• 食用香精 (Flavors)",
+            "Bengali": "⚠️ [চীন 🇨🇳] সন্দেহজনক উপাদান (Syubhah):\n• 起酥油 (শর্টনিং)\n• 人造奶油 (মার্জারিন)\n• 乳化剂 (ইমালসিফায়ার E471)",
             "Chinese": "⚠️ [中国 🇨🇳] 存疑成分 (Syubhah):\n• 起酥油 (可能含有动物油脂)\n• 人造奶油、人造黄油 (植脂或动脂混炼)\n• 乳化剂、单双甘油脂肪酸酯\n• 食用香精 (香精载体可能含醇)"
         },
         "tips": {
-            "English": "🛒 [China 🇨🇳] Shopping Tips:\n1. Look for the green '清真' logo.\n2. Instant noodles often use '料酒' (cooking wine) in sauce packets.\n3. Avoid gelatin candies unless marked halal.",
-            "Bengali": "🛒 [চীন 🇨🇳] কেনাকাটার টিপস:\n১. প্যাকেটের গায়ে সবুজ '清真' (Halal) সিল আছে কি না আগে নিশ্চিত হোন।\n২. চাইনিজ স্ন্যাকস ও নুডুলসে রান্নার ওয়াইন '料酒' প্রচুর থাকে।\n৩. জেলাটিনযুক্ত ক্যান্ডি বা জেলি এড়িয়ে চলুন।",
+            "English": "🛒 [China 🇨🇳] Shopping Tips:\n1. Look for the green '清真' logo.\n2. Instant noodles often use '料酒' (cooking wine) in sauce packets.",
+            "Bengali": "🛒 [চীন 🇨🇳] কেনাকাটার টিপস:\n১. প্যাকেটের গায়ে সবুজ '清真' সিল আছে কি না দেখুন।\n২. নুডুলসের সসে '料酒' থাকতে পারে।",
             "Chinese": "🛒 [中国 🇨🇳] 购物小贴士:\n1. 优先选购带有绿色‘清真’标识的正规食品。\n2. 方便面与自热火锅的酱包中极常含有‘料酒’，务必检查。"
         },
         "info": {
             "English": "ℹ️ [China 🇨🇳] Guide:\n• Take a photo of the '配料' or '配料表' (Ingredients).",
-            "Bengali": "ℹ️ [চীন 🇨🇳] নির্দেশিকা:\n• পণ্যের উপাদানের তালিকার (配料 / 配料表) অংশের ছবি স্ক্যান করুন।",
+            "Bengali": "ℹ️ [চীন 🇨🇳] নির্দেশিকা:\n• উপাদানের তালিকার (配料表) সোজা ছবি পাঠান।",
             "Chinese": "ℹ️ [中国 🇨🇳] 指南:\n• 请清晰拍摄食品包装背面的‘配料’或‘配料表’。"
         }
     },
@@ -378,22 +624,22 @@ COUNTRY_DETAILS = {
         },
         "haram": {
             "English": "🚫 [Korea 🇰🇷] Haram Ingredients:\n• 돼지고기 (Pork)\n• 돈지 / 라드 (Pork Fat / Lard)\n• 햄, 베이컨 (Ham, Bacon)\n• 맛술, 미림 (Cooking wine / Mirin)\n• 청주, 주정 (Alcohol / Spirits in sauces)\n• 동물성유지 (Animal fat)",
-            "Bengali": "🚫 [কোরিয়া 🇰🇷] নিশ্চিত হারাম উপাদান:\n• 돼지고기 (Pork) | শুকরের মাংস\n• 돈지 / 라드 (Lard) | শুকরের চর্বি\n• 햄, 베이컨 | হ্যাম, বেকন\n• 맛술, 미림 | রান্নার মদ (Mirin)\n• 청주, 주정 | চুংজু মদ, অ্যালকোহল",
+            "Bengali": "🚫 [কোরিয়া 🇰🇷] নিশ্চিত হারাম উপাদান:\n• 돼지고기 (শুকরের মাংস)\n• 돈지 / 라드 (লার্ড)\n• 맛술, 미림 (রান্নার মদ)\n• 주정 (অ্যালকোহল)",
             "Chinese": "🚫 [韩国 🇰🇷] 严禁成分 (Haram):\n• 돼지고기 (猪肉)\n• 돈지 / 라드 (猪油)\n• 햄, 베이컨 (火腿、培根)\n• 맛술, 미림 (料酒、味霖)\n• 청주, 주정 (清酒、酒精 - 辣酱中极常见)\n• 동물성유지 (动物油脂)"
         },
         "syubhah": {
-            "English": "⚠️ [Korea 🇰🇷] Syubhah (Doubtful):\n• 쇼트닝 (Shortening)\n• 마가린 (Margarine)\n• 유화제 (Emulsifier / E471)\n• 가공유지 (Processed oils)\n• 젤라틴 (Gelatin - unless fish)",
-            "Bengali": "⚠️ [কোরিয়া 🇰🇷] সন্দেহজনক উপাদান (Syubhah):\n• 쇼트닝 (শর্টনিং)\n• 마가린 (মার্জারিন)\n• 유화제 (ইমালসিফায়ার E471)\n• 가공유지 (প্রক্রিয়াজাত চর্বি)\n• 젤라틴 (জেলাটিন)",
-            "Chinese": "⚠️ [韩国 🇰🇷] 存疑成分 (Syubhah):\n• 쇼트닝 (起酥油)\n• 마가린 (人造黄油)\n• 유화제 (乳化剂)\n• 가공유지 (加工油脂)"
+            "English": "⚠️ [Korea 🇰🇷] Syubhah (Doubtful):\n• 쇼트ニング (Shortening)\n• 마가린 (Margarine)\n• 유화제 (Emulsifier / E471)\n• 가공유지 (Processed oils)",
+            "Bengali": "⚠️ [কোরিয়া 🇰🇷] সন্দেহজনক উপাদান (Syubhah):\n• 쇼트ニング (শর্টনিং)\n• 유화제 (ইমালসিফায়ার)\n• 가공유지 (প্রক্রিয়াজাত চর্বি)",
+            "Chinese": "⚠️ [韩国 🇰🇷] 存疑成分 (Syubhah):\n• 쇼트ニング (起酥油)\n• 마가린 (人造黄油)\n• 유화제 (乳化剂)\n• 가공유지 (加工油脂)"
         },
         "tips": {
-            "English": "🛒 [Korea 🇰🇷] Shopping Tips:\n1. Look for '식물성유지' (Vegetable oil).\n2. Ramyun (라면) soups very often contain pork extract.\n3. Korean sauces (Gochujang) often contain '주정' (Alcohol/spirits).",
-            "Bengali": "🛒 [কোরিয়া 🇰🇷] কেনাকাটার টিপস:\n১. প্যাকেটে 식물성유지 (উদ্ভিজ্জ তেল) লেখা থাকলে নিরাপদ।\n২. জনপ্রিয় রামিয়ন (라면)-এর স্যুপ ব্রোথে শুকরের নির্যাস থাকে।\n৩. কোরিয়ান সসে 주정 (অ্যালকোহল) আছে কি না দেখে নিন।",
+            "English": "🛒 [Korea 🇰🇷] Shopping Tips:\n1. Look for '식물성유지' (Vegetable oil).\n2. Ramyun (라면) soups very often contain pork extract.",
+            "Bengali": "🛒 [কোরিয়া 🇰🇷] কেনাকাটার টিপস:\n১. প্যাকেটে 식물성유지 লেখা থাকলে নিরাপদ।\n২. রামিয়নের স্যুপে শুকর থাকে কি না দেখুন।",
             "Chinese": "🛒 [韩国 🇰🇷] 购物小贴士:\n1. 认准‘식물성유지 (植物油脂)’标识。\n2. 韩国泡面（라면）汤粉包绝大多数含牛猪肉提取物，须格外小心。"
         },
         "info": {
             "English": "ℹ️ [Korea 🇰🇷] Guide:\n• Take a picture of '원재료명' (Ingredients).",
-            "Bengali": "ℹ️ [কোরিয়া 🇰🇷] নির্দেশিকা:\n• পণ্যের উপাদানের তালিকার (원재료명) স্পষ্ট ছবি পাঠান।",
+            "Bengali": "ℹ️ [কোরিয়া 🇰🇷] নির্দেশিকা:\n• উপাদানের তালিকার (원재료명) স্পষ্ট ছবি পাঠান।",
             "Chinese": "ℹ️ [韩国 🇰🇷] 指南:\n• 请清晰拍摄包装背面的‘원재료명’（原材料名）部分。"
         }
     },
@@ -406,17 +652,17 @@ COUNTRY_DETAILS = {
         },
         "haram": {
             "English": "🚫 [Bangladesh 🇧🇩] Haram Ingredients:\n• Pork, Bacon, Lard (in imported snacks)\n• Non-halal Gelatin\n• Carmine (E120)\n• Alcohol, Rum flavoring",
-            "Bengali": "🚫 [বাংলাদেশ 🇧🇩] নিশ্চিত হারাম উপাদান:\n• পর্ক, বেকন, হ্যাম, লার্ড (আমদানিকৃত খাদ্যে)\n• অ-হালাল প্রাণিজ জেলাটিন (আমদানিকৃত জেলি, চকলেটে)\n• অ্যালকোহল, স্পিরিট, রাম এসেন্স\n• ক্যারমাইন / কোচিনিল (E120 লাল কৃত্রিম রঙ)",
+            "Bengali": "🚫 [বাংলাদেশ 🇧🇩] নিশ্চিত হারাম উপাদান:\n• পর্ক, বেকন, হ্যাম, লার্ড (আমদানিকৃত খাদ্যে)\n• অ-হালাল প্রাণিজ জেলাটিন\n• অ্যালকোহল, রাম এসেন্স\n• ক্যারমাইন / কোচিনিল (E120)",
             "Chinese": "🚫 [孟加拉 🇧🇩] 严禁成分 (Haram):\n• 进口零食中的猪肉、猪油成分\n• 非清真明胶 (Gelatin)\n• 胭脂红 (E120)\n• 酒精、朗姆酒香精"
         },
         "syubhah": {
             "English": "⚠️ [Bangladesh 🇧🇩] Syubhah (Doubtful):\n• Emulsifiers (E471, E472)\n• Bakery Shortening & Margarine\n• Cheese Rennet & Whey powder",
-            "Bengali": "⚠️ [বাংলাদেশ 🇧🇩] সন্দেহজনক উপাদান (Syubhah):\n• ইমালসিফায়ার (E471, E472a-f, E481) - ভেজিটেবল উল্লেখ ছাড়া\n• শর্টনিং ও মার্জারিন (বেকারি পণ্যে প্রাণিজ চর্বি)\n• রেনেট (Rennet) ও হুই পাউডার\n• কৃত্রিম সুগন্ধি ও এসেন্স",
+            "Bengali": "⚠️ [বাংলাদেশ 🇧🇩] সন্দেহজনক উপাদান (Syubhah):\n• ইমালসিফায়ার (E471, E472)\n• শর্টনিং ও মার্জারিন\n• পনিরের রেনেট ও হুই পাউডার",
             "Chinese": "⚠️ [孟加拉 🇧🇩] 存疑成分 (Syubhah):\n• 乳化剂 (E471, E472)\n• 烘焙起酥油与人造奶油\n• 奶酪凝乳酶与乳清粉"
         },
         "tips": {
             "English": "🛒 [Bangladesh 🇧🇩] Shopping Tips:\n1. Check imported chocolates and jellies for Gelatin sources.\n2. Look for Islamic Foundation Halal logo.",
-            "Bengali": "🛒 [বাংলাদেশ 🇧🇩] কেনাকাটার টিপস:\n১. আমদানিকৃত বিস্কুট বা চকলেটের মোড়কে E471 ও Gelatin এর উৎস যাচাই করুন।\n২. সাধারণ বেকারি থেকে কেক/পেস্ট্রি কেনার সময় শর্টনিংয়ের উৎস জেনে নিন।\n৩. মোড়কের গায়ে ইসলামিক ফাউন্ডেশন বা স্বীকৃত হালাল সনদ লোগো দেখে নিন।",
+            "Bengali": "🛒 [বাংলাদেশ 🇧🇩] কেনাকাটার টিপস:\n১. আমদানিকৃত চকলেট ও জেলিতে জেলাটিনের উৎস দেখুন।\n২. ইসলামিক ফাউন্ডেশনের হালাল লোগো দেখে নিন।",
             "Chinese": "🛒 [孟加拉 🇧🇩] 购物小贴士:\n1. 进口巧克力和果冻需仔细核对明胶来源。\n2. 认准本地伊斯兰基金会清真认证。"
         },
         "info": {
@@ -435,7 +681,7 @@ COUNTRY_RULES = {
         Header: Komposisi.
         - HARAM: Babi, Daging Babi (Pork), Lemak Babi (Lard), Porcine, Ham, Bacon, Gelatin Babi, Saren, Marus, Didih (Animal blood), Alkohol, Minuman Beralkohol, Angciu (Red cooking wine), Arak Masak, Rum, Mirin beralkohol, Non-Halal certified chicken/beef.
         - SYUBHAH: Pengemulsi (Emulsifier / E471/E472 - unless specified nabati), Mentega Putih (Shortening), Margarin, Gelatin (unless bovine halal/fish), Kolagen, Perisa (Flavors with alcohol solvent).
-        - HALAL: Minyak Nabati, Minyak Kelapa Sawit, Kedelai, Tepung Terigu, Gula, Garam, Ekstrak Ragi.
+        - HALAL: Minyak Nabati, Minyak Kelapa Sawit, Kedelai, Tepung Terigu, Gula, Garam.
         """
     },
     "Japan": {
@@ -463,7 +709,7 @@ COUNTRY_RULES = {
         TARGET REGION: SOUTH KOREA.
         Header: 원재료명.
         - HARAM: 돼지고기, 돈지/라드, 햄, 베이컨, 젤라틴 (돼지), 쇠고기/닭고기 (unless Halal marked), 맛술 (Cooking wine), 청주, 주정 (Alcohol), 양조주, 동물성유지.
-        - SYUBHAH: 쇼트닝, 마가린, 유화제 (E471), 가공유지, 콜라겐, 효소제제.
+        - SYUBHAH: 쇼트ニング, 마가린, 유화제 (E471), 가공유지, 콜라ゲン, 효소제제.
         """
     },
     "USA": {
@@ -487,7 +733,7 @@ COUNTRY_RULES = {
 }
 
 # ============================================================================
-# Quick Reply Generators & Dynamic Flex Builder
+# ৫. কুইক রিপ্লাই এবং Flex Message জেনারেটর
 # ============================================================================
 def get_country_selection_menu():
     return QuickReply(items=[
@@ -518,6 +764,9 @@ def get_direct_camera_quick_reply(lang="English"):
 def get_post_scan_quick_reply(lang="English"):
     lang_data = I18N.get(lang, I18N["English"])
     return QuickReply(items=[
+        QuickReplyItem(action=MessageAction(label=lang_data["btn_feedback_ok"], text="feedback_accurate")),
+        QuickReplyItem(action=MessageAction(label=lang_data["btn_feedback_doubt"], text="feedback_doubt")),
+        QuickReplyItem(action=MessageAction(label=lang_data["btn_share"], text="share_last_result")),
         QuickReplyItem(action=MessageAction(label=lang_data["btn_explain"], text="explain_last_scan")),
         QuickReplyItem(action=MessageAction(label=lang_data["btn_history"], text="show_history")),
         QuickReplyItem(action=CameraAction(label=lang_data["cam_btn"]))
@@ -530,7 +779,7 @@ def get_localized_country_text(country, category, lang="English"):
         return cat_dict.get(lang, cat_dict.get("English", cat_dict.get("Bengali", "")))
     return str(cat_dict)
 
-def create_halal_flex_card(product_name, company_name, status, reason, items_text, alternatives_text, lang="English", country="Japan", item_no=None, total_count=None):
+def create_halal_flex_card(product_name, company_name, status, reason, items_text, alternatives_text, allergens_text, lang="English", country="Japan", item_no=None, total_count=None):
     lang_data = I18N.get(lang, I18N["English"])
     country_info = COUNTRY_RULES.get(country, COUNTRY_RULES["Japan"])
     country_header = country_info["title"]
@@ -556,7 +805,7 @@ def create_halal_flex_card(product_name, company_name, status, reason, items_tex
 
     body_contents = []
 
-    # Counter tag
+    # কাউন্টার তথ্য
     if item_no is not None and total_count is not None:
         counter_label = lang_data["counter_text"].format(total=total_count, item_no=item_no)
         body_contents.append({
@@ -574,7 +823,7 @@ def create_halal_flex_card(product_name, company_name, status, reason, items_tex
             ]
         })
 
-    # Product and Manufacturer name
+    # প্রোডাক্ট ও কোম্পানি নাম
     if product_name or company_name:
         prod_display = product_name if product_name else "Food Item"
         comp_display = f" | {company_name}" if company_name else ""
@@ -594,7 +843,7 @@ def create_halal_flex_card(product_name, company_name, status, reason, items_tex
             ]
         })
 
-    # Status and Reason
+    # স্ট্যাটাস ও কারণ
     body_contents.append({
         "type": "box",
         "layout": "vertical",
@@ -620,7 +869,7 @@ def create_halal_flex_card(product_name, company_name, status, reason, items_tex
         ]
     })
 
-    # Identified ingredients
+    # শনাক্ত উপাদান
     body_contents.append({
         "type": "box",
         "layout": "vertical",
@@ -644,7 +893,35 @@ def create_halal_flex_card(product_name, company_name, status, reason, items_tex
         ]
     })
 
-    # Halal Alternative Suggestions
+    # অ্যালার্জি ওয়ার্নিং বক্স
+    if allergens_text and allergens_text.strip():
+        body_contents.append({
+            "type": "box",
+            "layout": "vertical",
+            "backgroundColor": "#FFF8E1",
+            "cornerRadius": "6px",
+            "paddingAll": "10px",
+            "margin": "md",
+            "contents": [
+                {
+                    "type": "text",
+                    "text": lang_data["label_allergens"],
+                    "weight": "bold",
+                    "size": "xxs",
+                    "color": "#F57F17"
+                },
+                {
+                    "type": "text",
+                    "text": allergens_text,
+                    "size": "xxs",
+                    "color": "#E65100",
+                    "wrap": True,
+                    "margin": "xs"
+                }
+            ]
+        })
+
+    # হালাল বিকল্প সাজেশন
     if alternatives_text and alternatives_text.strip():
         body_contents.append({
             "type": "box",
@@ -672,7 +949,7 @@ def create_halal_flex_card(product_name, company_name, status, reason, items_tex
             ]
         })
 
-    # Hadith and App Recommendation
+    # হাদিস ও পরামর্শ
     body_contents.extend([
         {
             "type": "separator",
@@ -767,7 +1044,7 @@ def create_halal_flex_card(product_name, company_name, status, reason, items_tex
     return FlexContainer.from_json(json.dumps(flex_json))
 
 # ============================================================================
-# Core Flask Endpoints & Message Handlers
+# ৬. কোর ফ্লাস্ক মেসেজ হ্যান্ডলার
 # ============================================================================
 @app.route("/", methods=['GET'])
 def index():
@@ -787,20 +1064,78 @@ def callback():
 
 @handler.add(MessageEvent, message=TextMessageContent)
 def handle_text_message(event):
-    global user_languages, user_countries, user_last_scans, user_scan_history
+    global user_languages, user_countries, user_last_scans
     user_id = event.source.user_id
     raw_text = event.message.text.strip()
     text = raw_text.lower()
 
     current_lang = user_languages.get(user_id, "English")
     current_country = user_countries.get(user_id, "Japan")
-    history_list = user_scan_history.get(user_id, [])
 
     with ApiClient(configuration) as api_client:
         line_bot_api = MessagingApi(api_client)
 
-        # ১. হিস্ট্রি তালিকা প্রদর্শন
+        # ১. ফিডব্যাক বাটন (সঠিক ও সংশয় হ্যান্ডলিং)
+        if text in ["feedback_accurate", "নির্ভুল তথ্য", "accurate info", "🎯 নির্ভুল তথ্য", "🎯 accurate info"]:
+            last_item = user_last_scans.get(user_id, {})
+            log_user_feedback(user_id, last_item.get('product_name', 'Unknown'), 'ACCURATE')
+            line_bot_api.reply_message(
+                ReplyMessageRequest(
+                    reply_token=event.reply_token,
+                    messages=[TextMessage(text=I18N[current_lang]["feedback_ok_msg"])]
+                )
+            )
+            return
+
+        if text in ["feedback_doubt", "সংশয়", "report", "রিভিউ", "🚩 সংশয় / রিভিউ", "🚩 report / review"]:
+            last_item = user_last_scans.get(user_id, {})
+            log_user_feedback(user_id, last_item.get('product_name', 'Unknown'), 'DOUBTFUL_REPORT')
+            line_bot_api.reply_message(
+                ReplyMessageRequest(
+                    reply_token=event.reply_token,
+                    messages=[TextMessage(text=I18N[current_lang]["feedback_doubt_msg"])]
+                )
+            )
+            return
+
+        # ২. শেয়ার রেজাল্ট (এক ক্লিকে রেজাল্ট টেক্সট কপি/ফরোয়ার্ডের উপযোগী মেসেজ)
+        if text in ["share_last_result", "share", "শেয়ার", "bagikan", "分享"]:
+            last_item = user_last_scans.get(user_id)
+            if last_item:
+                prod = last_item.get('product_name', 'Food Product')
+                comp = last_item.get('company_name', '')
+                stat = last_item.get('status', 'CHECKED')
+                rsn = last_item.get('reason', '')
+                share_txt = f"📦 {prod} ({comp})\n🏷️ Status: {stat}\n📌 Observation: {rsn}\n\n✅ Checked via Global Halal Food Checker Bot."
+                line_bot_api.reply_message(
+                    ReplyMessageRequest(
+                        reply_token=event.reply_token,
+                        messages=[TextMessage(text=share_txt)]
+                    )
+                )
+            else:
+                line_bot_api.reply_message(
+                    ReplyMessageRequest(
+                        reply_token=event.reply_token,
+                        messages=[TextMessage(text=I18N[current_lang]["history_empty"])]
+                    )
+                )
+            return
+
+        # ৩. রেডিমেড হালাল ব্র্যান্ড গাইড
+        if any(k in text for k in ["safe brand", "ব্র্যান্ড", "brand", "brand guide", "gudang brand", "品牌"]):
+            guide_txt = SAFE_BRAND_GUIDES.get(current_country, SAFE_BRAND_GUIDES["Japan"])
+            line_bot_api.reply_message(
+                ReplyMessageRequest(
+                    reply_token=event.reply_token,
+                    messages=[TextMessage(text=guide_txt)]
+                )
+            )
+            return
+
+        # ৪. হিস্ট্রি তালিকা প্রদর্শন (SQLite ডাটাবেস থেকে)
         if text in ["show_history", "history", "হিস্ট্রি", "ইতিহাস", "履歴", "历史", "riwayat", "سجل"]:
+            history_list = get_user_history_list(user_id, limit=10)
             if not history_list:
                 line_bot_api.reply_message(
                     ReplyMessageRequest(
@@ -810,12 +1145,12 @@ def handle_text_message(event):
                 )
                 return
 
-            response_msg = I18N[current_lang]["history_title"].format(count=len(history_list))
-            for idx, item in enumerate(reversed(history_list[-10:]), 1):
-                actual_idx = len(history_list) - idx + 1
+            total_count = get_user_total_scans(user_id)
+            response_msg = I18N[current_lang]["history_title"].format(count=total_count)
+            for idx, item in enumerate(history_list, 1):
                 prod = item.get("product_name", "Food Item")
                 status = item.get("status", "VERIFY")
-                response_msg += f"{actual_idx}. 📦 {prod} [{status}]\n"
+                response_msg += f"{idx}. 📦 {prod} [{status}]\n"
 
             response_msg += I18N[current_lang]["history_hint"]
             line_bot_api.reply_message(
@@ -826,11 +1161,13 @@ def handle_text_message(event):
             )
             return
 
-        # ২. নির্দিষ্ট নম্বরের আইটেম পুনরায় বিস্তারিত দেখা
+        # ৫. নির্দিষ্ট নম্বরের আইটেম পুনরায় কার্ড আকারে দেখা (1, 2, 3...)
         if raw_text.isdigit():
             target_idx = int(raw_text)
+            history_list = get_user_history_list(user_id, limit=10)
             if 1 <= target_idx <= len(history_list):
                 saved_item = history_list[target_idx - 1]
+                total_count = get_user_total_scans(user_id)
                 flex_container = create_halal_flex_card(
                     saved_item.get("product_name", ""),
                     saved_item.get("company_name", ""),
@@ -838,10 +1175,11 @@ def handle_text_message(event):
                     saved_item.get("reason", ""),
                     saved_item.get("items", ""),
                     saved_item.get("alternatives", ""),
+                    saved_item.get("allergens", ""),
                     current_lang,
                     saved_item.get("country", current_country),
                     item_no=target_idx,
-                    total_count=len(history_list)
+                    total_count=total_count
                 )
                 line_bot_api.reply_message(
                     ReplyMessageRequest(
@@ -857,7 +1195,7 @@ def handle_text_message(event):
                 )
                 return
 
-        # ৩. শেষ স্ক্যানের উপাদানের ব্যাখ্যা
+        # ৬. শেষ স্ক্যানের উপাদানের ব্যাখ্যা
         if text in ["explain_last_scan", "explain", "বিস্তারিত", "ব্যাখ্যা", "解説", "详细", "jelaskan"]:
             last_scan = user_last_scans.get(user_id)
             if last_scan:
@@ -867,6 +1205,8 @@ def handle_text_message(event):
                 explanation += f"📊 Status: {last_scan.get('status')}\n\n"
                 explanation += f"📌 Reason: {last_scan.get('reason')}\n\n"
                 explanation += f"🏷️ Ingredients: {last_scan.get('items')}\n\n"
+                if last_scan.get('allergens'):
+                    explanation += f"⚠️ Allergens: {last_scan.get('allergens')}\n\n"
                 if last_scan.get('alternatives'):
                     explanation += f"💡 Alternatives: {last_scan.get('alternatives')}\n\n"
                 line_bot_api.reply_message(
@@ -881,7 +1221,7 @@ def handle_text_message(event):
                 )
             return
 
-        # ৪. দেশ নির্বাচন ও স্বয়ংক্রিয় ভাষা রূপান্তর (Indonesia সহ)
+        # ৭. দেশ নির্বাচন ও স্বয়ংক্রিয় ভাষা রূপান্তর (Indonesia সহ)
         if raw_text.startswith("Country:"):
             chosen = raw_text.replace("Country:", "").strip().lower()
             if "indonesia" in chosen:
@@ -915,7 +1255,7 @@ def handle_text_message(event):
             )
             return
 
-        # ৫. ভাষা নির্বাচন ওভাররাইড
+        # ৮. ভাষা নির্বাচন ওভাররাইড
         if raw_text.startswith("Set:"):
             target = raw_text.replace("Set:", "").strip().lower()
             if "english" in target:
@@ -1017,7 +1357,7 @@ def handle_text_message(event):
         )
 
 # ============================================================================
-# Gemini Flash Vision Inference Engine
+# ৭. Gemini Flash Vision Inference Engine
 # ============================================================================
 def call_gemini_vision(prompt, image_b64):
     candidate_models = [
@@ -1034,7 +1374,7 @@ def call_gemini_vision(prompt, image_b64):
         }],
         "generationConfig": {
             "temperature": 0.1,
-            "maxOutputTokens": 800,
+            "maxOutputTokens": 850,
             "response_mime_type": "application/json"
         }
     }
@@ -1061,11 +1401,11 @@ def call_gemini_vision(prompt, image_b64):
     raise Exception(last_error)
 
 # ============================================================================
-# Image Message Inspection Pipeline
+# ৮. ইমেজ প্রসেসিং ও ইন্সপেকশন পাইপলাইন
 # ============================================================================
 @handler.add(MessageEvent, message=ImageMessageContent)
 def handle_image_message(event):
-    global user_languages, user_countries, user_last_scans, user_scan_history
+    global user_languages, user_countries, user_last_scans
     user_id = event.source.user_id
     selected_lang = user_languages.get(user_id, "English")
     selected_country = user_countries.get(user_id, "Japan")
@@ -1075,6 +1415,7 @@ def handle_image_message(event):
             blob_api = MessagingApiBlob(api_client)
             raw_bytes = blob_api.get_message_content(event.message.id)
 
+        # ইমেজ সাইজ অপটিমাইজেশন (মেমরি ক্র্যাশ প্রতিরোধে)
         img = Image.open(io.BytesIO(raw_bytes))
         img.thumbnail((500, 500))
         out_buf = io.BytesIO()
@@ -1101,24 +1442,29 @@ def handle_image_message(event):
         {csv_db_summary}
 
         Inspection Procedure:
-        1. Identify the Product Name and Manufacturer / Brand name from packaging or barcode context.
-        2. Accurately detect and transcribe ingredients or barcode information from the packaging.
-        3. Match ingredients with the Authoritative Dataset & local regulations:
-           - Check for any Haram items (pork derivatives, non-halal meat extracts, cooking alcohol/sake/mirin/liaojiu/cheongju/angciu, carmine/E120, animal blood/saren, animal fats).
-           - Check for Syubhah/Doubtful components (shortening, emulsifiers E471/E472, unspecified animal gelatin, collagen, enzymes, yeast food).
-        4. Verdict Hierarchy: If ANY Haram found -> 'HARAM'. Else if ANY Syubhah found -> 'SYUBHAH'. Otherwise -> 'HALAL'.
-        5. Smart Halal Alternative: If status is 'HARAM' or 'SYUBHAH', suggest 1-2 widely available Halal alternative brands/items in {selected_country}. If HALAL, leave 'alternatives' empty.
+        1. Check image clarity: If the image is blurry, glaring, unreadable, or not a food packaging label, set 'is_blurry': true.
+        2. Identify Product Name, Manufacturer / Brand name, and Barcode digits (if visible).
+        3. Accurately detect and transcribe ingredients from packaging.
+        4. Detect Common Allergens (Milk, Egg, Peanut, Tree Nuts, Wheat/Gluten, Soy, Fish, Crustaceans).
+        5. Match ingredients with Dataset & local regulations:
+           - Check Haram items (pork derivatives, non-halal meat extracts, cooking alcohol/sake/mirin/liaojiu/cheongju/angciu, carmine/E120, animal blood/saren, animal fats).
+           - Check Syubhah/Doubtful components (shortening, emulsifiers E471/E472, unspecified animal gelatin, collagen, enzymes, yeast food).
+        6. Verdict Hierarchy: If ANY Haram found -> 'HARAM'. Else if ANY Syubhah found -> 'SYUBHAH'. Otherwise -> 'HALAL'.
+        7. Smart Halal Alternative: If status is 'HARAM' or 'SYUBHAH', suggest 1-2 widely available Halal alternative brands/items in {selected_country}. If HALAL, leave 'alternatives' empty.
 
         CRITICAL LOCALIZATION RULE:
-        All explanation, reason, items description, and alternatives MUST BE STRICTLY WRITTEN IN: {selected_lang}.
+        All explanation, reason, items description, allergens, and alternatives MUST BE STRICTLY WRITTEN IN: {selected_lang}.
 
         You MUST respond ONLY with a valid JSON matching this schema:
         {{
+            "is_blurry": false,
+            "barcode": "Detected barcode digits or empty string",
             "product_name": "Product name written in {selected_lang}",
             "company_name": "Manufacturer/Brand name",
             "status": "HALAL" or "HARAM" or "SYUBHAH",
             "reason": "Analysis strictly written in {selected_lang}",
             "items": "Detected specific key ingredients strictly written in {selected_lang}",
+            "allergens": "Detected allergens strictly written in {selected_lang} (or empty string if none)",
             "alternatives": "Suggested halal alternatives strictly written in {selected_lang}"
         }}
         """
@@ -1126,35 +1472,64 @@ def handle_image_message(event):
         result_raw = call_gemini_vision(prompt, image_b64)
         result_json = json.loads(result_raw)
 
-        product_name = result_json.get("product_name", "")
-        company_name = result_json.get("company_name", "")
-        status = result_json.get("status", "SYUBHAH")
-        reason = result_json.get("reason", "")
-        items = result_json.get("items", "")
-        alternatives = result_json.get("alternatives", "")
+        # ঝাপসা ছবি চেক
+        if result_json.get("is_blurry", False):
+            with ApiClient(configuration) as api_client:
+                line_bot_api = MessagingApi(api_client)
+                line_bot_api.reply_message(
+                    ReplyMessageRequest(
+                        reply_token=event.reply_token,
+                        messages=[TextMessage(
+                            text=I18N[selected_lang]["blurry_error"],
+                            quick_reply=get_direct_camera_quick_reply(selected_lang)
+                        )]
+                    )
+                )
+            return
 
-        if user_id not in user_scan_history:
-            user_scan_history[user_id] = []
+        barcode = result_json.get("barcode", "")
+        
+        # বারকোড লোকাল ক্যাশ চেক (ইনস্ট্যান্ট রেসপন্স)
+        cached_result = get_cached_barcode(barcode)
+        if cached_result:
+            product_name = cached_result.get("product_name")
+            company_name = cached_result.get("company_name")
+            status = cached_result.get("status")
+            reason = cached_result.get("reason")
+            items = cached_result.get("items")
+            allergens = cached_result.get("allergens")
+            alternatives = cached_result.get("alternatives")
+        else:
+            product_name = result_json.get("product_name", "")
+            company_name = result_json.get("company_name", "")
+            status = result_json.get("status", "SYUBHAH")
+            reason = result_json.get("reason", "")
+            items = result_json.get("items", "")
+            allergens = result_json.get("allergens", "")
+            alternatives = result_json.get("alternatives", "")
 
+            # নতুন বারকোড ক্যাশ সংরক্ষণ
+            if barcode:
+                save_barcode_cache(barcode, result_json, selected_country)
+
+        # ডাটাবেসে স্ক্যান হিস্ট্রি সংরক্ষণ
         scan_record = {
             "product_name": product_name,
             "company_name": company_name,
             "status": status,
             "reason": reason,
             "items": items,
-            "alternatives": alternatives,
-            "country": selected_country
+            "allergens": allergens,
+            "alternatives": alternatives
         }
-        user_scan_history[user_id].append(scan_record)
-
-        total_scans = len(user_scan_history[user_id])
-        current_item_no = total_scans
+        save_scan_history(user_id, scan_record, selected_country, barcode)
 
         user_last_scans[user_id] = scan_record
+        total_scans = get_user_total_scans(user_id)
 
         flex_container = create_halal_flex_card(
-            product_name, company_name, status, reason, items, alternatives, 
-            selected_lang, selected_country, item_no=current_item_no, total_count=total_scans
+            product_name, company_name, status, reason, items, alternatives, allergens,
+            selected_lang, selected_country, item_no=total_scans, total_count=total_scans
         )
         reply_payload = [
             FlexMessage(
